@@ -7,7 +7,7 @@ const pageSource = await readFile(new URL("../app/field-test/page.tsx", import.m
 
 test("field-test route uses the read-only core candidate", () => {
   assert.match(pageSource, /read-only-field-test-client/);
-  assert.doesNotMatch(pageSource, /field-test-client/);
+  assert.doesNotMatch(pageSource, /from\s+["']\.\/field-test-client["']/);
 });
 
 test("read-only field candidate does not open RHMI or diagnostic sessions", () => {
