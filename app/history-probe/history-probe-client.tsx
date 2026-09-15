@@ -45,8 +45,9 @@ type PendingDdp = {
   reject: (error: Error) => void;
 };
 
-const APP_VERSION = "0.32a-download-path-probe-stop-control";
+const APP_VERSION = "0.32a-download-path-probe-p3-stop-control";
 const SOURCE_BASELINE = "ba241d2048a2c4e6dd547b1fd1469b6bd03362fb";
+const DDP_P3_GUARD_MS = 100;
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const createStopError = () => {
   const error = new Error("Sesija je prekinuta od korisnika.");
@@ -109,6 +110,7 @@ export default function HistoryProbeClient() {
 
     let communicationStarted = false;
     let uploadStarted = false;
+    let lastVuResponseAt = 0;
     let sendDdp: ((message: readonly number[], requestSid: number, expectedTrep?: number | null, timeoutMs?: number) => Promise<DdpResult | null>) | null = null;
     const requireNotStopped = () => {
       if (stopRequestedRef.current) throw createStopError();
@@ -190,6 +192,7 @@ export default function HistoryProbeClient() {
           request.reject(new Error(`DDP odgovor nije validan: ${classification.reason ?? "unknown"}`));
           return;
         }
+        lastVuResponseAt = performance.now();
         if (classification.responsePending) {
           addLog("info", `DDP SID 0x${request.requestSid.toString(16).toUpperCase()} je RESPONSE PENDING; čekam završni odgovor.`);
           return;
@@ -230,6 +233,17 @@ export default function HistoryProbeClient() {
       ) => {
         requireNotStopped();
         if (pendingRequest) throw new Error("Paralelni DDP zahtev nije dozvoljen");
+
+        if (lastVuResponseAt > 0) {
+          const elapsed = performance.now() - lastVuResponseAt;
+          const remaining = DDP_P3_GUARD_MS - elapsed;
+          if (remaining > 0) {
+            addLog("info", `DDP P3 guard: čekam ${Math.ceil(remaining)} ms pre sledećeg zahteva.`);
+            await sleep(remaining);
+            requireNotStopped();
+          }
+        }
+
         return new Promise<DdpResult | null>((resolve, reject) => {
           let settled = false;
           const finishResolve = (result: DdpResult | null) => {
@@ -389,6 +403,7 @@ export default function HistoryProbeClient() {
       <p style={{ padding: 12, background: "#fef3c7", borderRadius: 10, fontSize: 13, lineHeight: 1.5 }}>
         0.32a proverava samo standardni Download BLE transport i DDP DownloadInterfaceVersion.
         Ne šalje Card Download TREP 06, ne čita karticu i ne pravi .DDD fajl.
+        DDP zahtevi poštuju P3 razmak pre sledećeg tester zahteva.
         Card-download korak je namerno odvojen jer standardni download može ažurirati LastCardDownload na kartici.
       </p>
 
