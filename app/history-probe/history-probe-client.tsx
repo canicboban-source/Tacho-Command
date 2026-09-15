@@ -45,9 +45,14 @@ type PendingDdp = {
   reject: (error: Error) => void;
 };
 
-const APP_VERSION = "0.32a-download-path-probe";
+const APP_VERSION = "0.32a-download-path-probe-stop-control";
 const SOURCE_BASELINE = "ba241d2048a2c4e6dd547b1fd1469b6bd03362fb";
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+const createStopError = () => {
+  const error = new Error("Sesija je prekinuta od korisnika.");
+  error.name = "AbortError";
+  return error;
+};
 
 const writeGatt = async (characteristic: BleCharacteristic, bytes: number[]) => {
   const value = Uint8Array.from(bytes);
@@ -70,6 +75,8 @@ export default function HistoryProbeClient() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const creditsRef = useRef<BleCharacteristic | null>(null);
   const gattWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const stopRequestedRef = useRef(false);
+  const abortCurrentRef = useRef<(() => void) | null>(null);
 
   const queueGattWrite = (characteristic: BleCharacteristic, bytes: number[]) => {
     const operation = gattWriteQueueRef.current
@@ -84,15 +91,28 @@ export default function HistoryProbeClient() {
     setLogs((previous) => [{ time, level, message }, ...previous.slice(0, 79)]);
   };
 
+  const stopProbe = () => {
+    if (!running || stopRequestedRef.current) return;
+    stopRequestedRef.current = true;
+    addLog("info", "Prekid zatražen. Ne šaljem nove test zahteve; zatvaram aktivnu sesiju.");
+    abortCurrentRef.current?.();
+  };
+
   const runProbe = async () => {
     setLogs([]);
     setDownloadVersion("—");
     setRunning(true);
+    stopRequestedRef.current = false;
+    abortCurrentRef.current = null;
+    creditsRef.current = null;
     gattWriteQueueRef.current = Promise.resolve();
 
     let communicationStarted = false;
     let uploadStarted = false;
     let sendDdp: ((message: readonly number[], requestSid: number, expectedTrep?: number | null, timeoutMs?: number) => Promise<DdpResult | null>) | null = null;
+    const requireNotStopped = () => {
+      if (stopRequestedRef.current) throw createStopError();
+    };
 
     try {
       const bluetooth = (navigator as Navigator & {
@@ -110,17 +130,21 @@ export default function HistoryProbeClient() {
         acceptAllDevices: true,
         optionalServices: [TACHO_DOWNLOAD_SERVICE_UUID],
       });
+      requireNotStopped();
       setDeviceName(device.name || "Tahograf");
       if (!device.gatt) throw new Error("GATT interfejs nije dostupan");
 
       const server = await device.gatt.connect();
+      requireNotStopped();
       const services = await server.getPrimaryServices();
+      requireNotStopped();
       const downloadService = services.find(
         (service) => service.uuid.toLowerCase() === TACHO_DOWNLOAD_SERVICE_UUID.toLowerCase(),
       );
       if (!downloadService) throw new Error("Smart Tacho Download servis nije pronađen");
 
       const characteristics = await downloadService.getCharacteristics();
+      requireNotStopped();
       const fifo = characteristics.find(
         (characteristic) => characteristic.uuid.toLowerCase() === TACHO_DOWNLOAD_FIFO_UUID.toLowerCase(),
       );
@@ -133,6 +157,12 @@ export default function HistoryProbeClient() {
       const assembler = createItsMessageAssembler();
       let pendingRequest: PendingDdp | null = null;
       let creditResolver: ((credit: number) => void) | null = null;
+      abortCurrentRef.current = () => {
+        if (!pendingRequest) return;
+        const request = pendingRequest;
+        pendingRequest = null;
+        request.reject(createStopError());
+      };
 
       fifo.addEventListener("characteristicvaluechanged", (event) => {
         const view = (event.target as BleCharacteristic | null)?.value;
@@ -179,11 +209,15 @@ export default function HistoryProbeClient() {
       });
 
       await credits.startNotifications();
+      requireNotStopped();
       await fifo.startNotifications();
+      requireNotStopped();
       const serverCreditPromise = new Promise<number>((resolve) => { creditResolver = resolve; });
       await queueGattWrite(credits, [1]);
+      requireNotStopped();
       const serverCredit = await Promise.race([serverCreditPromise, sleep(4000).then(() => null)]);
       creditResolver = null;
+      requireNotStopped();
       if (serverCredit === null) throw new Error("Download server credit timeout");
       if (serverCredit === 0xff) throw new Error("Tahograf je odbio Download flow control");
       addLog("pass", `Download BLE FIFO/Credits spremni. Server credit: ${serverCredit}`);
@@ -194,6 +228,7 @@ export default function HistoryProbeClient() {
         expectedTrep: number | null = null,
         timeoutMs = 7000,
       ) => {
+        requireNotStopped();
         if (pendingRequest) throw new Error("Paralelni DDP zahtev nije dozvoljen");
         return new Promise<DdpResult | null>((resolve, reject) => {
           let settled = false;
@@ -244,22 +279,26 @@ export default function HistoryProbeClient() {
         await sendDdp(DDP_START_COMMUNICATION_REQUEST, 0x81),
       );
       communicationStarted = true;
+      requireNotStopped();
 
       requirePositive(
         "DDP StartDiagnosticSession 0x81",
         await sendDdp(DDP_START_DIAGNOSTIC_SESSION_REQUEST, 0x10),
       );
+      requireNotStopped();
 
       requirePositive(
         "DDP RequestUpload",
         await sendDdp(DDP_REQUEST_UPLOAD, 0x35),
       );
       uploadStarted = true;
+      requireNotStopped();
 
       const versionResult = requirePositive(
         "DDP DownloadInterfaceVersion TREP 00",
         await sendDdp(DDP_REQUEST_DOWNLOAD_INTERFACE_VERSION, 0x36, 0x00),
       );
+      requireNotStopped();
       const parsedVersion = parseDownloadInterfaceVersion(versionResult.message);
       if (!parsedVersion.valid) throw new Error("DownloadInterfaceVersion payload nije validan");
       const versionLabel = `Gen ${parsedVersion.generation} / v${parsedVersion.version}`;
@@ -274,6 +313,7 @@ export default function HistoryProbeClient() {
         await sendDdp(DDP_REQUEST_TRANSFER_EXIT, 0x37),
       );
       uploadStarted = false;
+      requireNotStopped();
 
       requirePositive(
         "DDP StopCommunication",
@@ -283,28 +323,34 @@ export default function HistoryProbeClient() {
 
       addLog("pass", "0.32a Download putanja je potvrđena bez zahteva za podatke kartice.");
     } catch (error) {
-      addLog("fail", error instanceof Error ? error.message : String(error));
+      const stoppedByUser = error instanceof Error && error.name === "AbortError";
+      addLog(stoppedByUser ? "info" : "fail", error instanceof Error ? error.message : String(error));
 
       if (sendDdp) {
         if (uploadStarted) {
           try {
+            stopRequestedRef.current = false;
             await sendDdp(DDP_REQUEST_TRANSFER_EXIT, 0x37, null, 3000);
             addLog("info", "Recovery: RequestTransferExit poslat.");
           } catch {}
         }
         if (communicationStarted) {
           try {
+            stopRequestedRef.current = false;
             await sendDdp(DDP_STOP_COMMUNICATION_REQUEST, 0x82, null, 3000);
             addLog("info", "Recovery: StopCommunication poslat.");
           } catch {}
         }
       }
     } finally {
+      abortCurrentRef.current = null;
+      stopRequestedRef.current = false;
       if (creditsRef.current) {
         try {
           await queueGattWrite(creditsRef.current, [0xff]);
         } catch {}
       }
+      creditsRef.current = null;
       setRunning(false);
     }
   };
@@ -325,9 +371,19 @@ export default function HistoryProbeClient() {
           <p style={{ margin: "4px 0", color: "#6b7280", fontSize: 13 }}>{APP_VERSION}</p>
           <p style={{ margin: 0, color: "#9ca3af", fontSize: 12 }}>source baseline: {SOURCE_BASELINE.slice(0, 7)}</p>
         </div>
-        <button type="button" onClick={runProbe} disabled={running}>
-          {running ? "Proveravam…" : "Pokreni 0.32a probe"}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={runProbe} disabled={running}>
+            {running ? "Proveravam…" : "Pokreni 0.32a probe"}
+          </button>
+          <button
+            type="button"
+            onClick={stopProbe}
+            disabled={!running}
+            style={{ background: running ? "#991b1b" : undefined, color: running ? "#fff" : undefined }}
+          >
+            Prekini sesiju
+          </button>
+        </div>
       </div>
 
       <p style={{ padding: 12, background: "#fef3c7", borderRadius: 10, fontSize: 13, lineHeight: 1.5 }}>
