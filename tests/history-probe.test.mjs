@@ -57,7 +57,7 @@ test("0.32a route is a bounded download-path probe and cannot request driver-car
   assert.match(clientSource, /DDP_REQUEST_DOWNLOAD_INTERFACE_VERSION/);
   assert.match(clientSource, /DDP_REQUEST_TRANSFER_EXIT/);
   assert.match(clientSource, /DDP_STOP_COMMUNICATION_REQUEST/);
-  assert.match(clientSource, /ne šalje Card Download TREP 06/);
+  assert.match(clientSource, /ne šalje Card Download TREP 06/i);
   assert.doesNotMatch(clientSource, /DDP_REQUEST_DRIVER_CARD_SLOT_1/);
   assert.doesNotMatch(clientSource, /TACHO_DIAGNOSTICS_SERVICE_UUID/);
   assert.doesNotMatch(clientSource, /0x31\s*,\s*0x01\s*,\s*0xf2\s*,\s*0x11/i);
