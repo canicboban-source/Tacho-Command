@@ -50,13 +50,17 @@ test("surfaces matching DDP negative responses without treating response-pending
   assert.equal(rejected.negativeResponseCode, 0x12);
 });
 
-test("0.32a route is a bounded download-path probe and cannot request driver-card data", () => {
+test("0.32a route is bounded, stoppable, and cannot request driver-card data", () => {
   assert.match(pageSource, /history-probe-client/);
-  assert.match(clientSource, /0\.32a-download-path-probe/);
+  assert.match(clientSource, /0\.32a-download-path-probe-stop-control/);
   assert.match(clientSource, /TACHO_DOWNLOAD_SERVICE_UUID/);
   assert.match(clientSource, /DDP_REQUEST_DOWNLOAD_INTERFACE_VERSION/);
   assert.match(clientSource, /DDP_REQUEST_TRANSFER_EXIT/);
   assert.match(clientSource, /DDP_STOP_COMMUNICATION_REQUEST/);
+  assert.match(clientSource, /Prekini sesiju/);
+  assert.match(clientSource, /stopRequestedRef/);
+  assert.match(clientSource, /abortCurrentRef/);
+  assert.match(clientSource, /Recovery: StopCommunication poslat/);
   assert.match(clientSource, /ne šalje Card Download TREP 06/i);
   assert.doesNotMatch(clientSource, /DDP_REQUEST_DRIVER_CARD_SLOT_1/);
   assert.doesNotMatch(clientSource, /TACHO_DIAGNOSTICS_SERVICE_UUID/);
