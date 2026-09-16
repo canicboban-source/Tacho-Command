@@ -340,7 +340,7 @@ export default function LandingPage() {
           <h2>{t.priceTitle}</h2>
           <p>{t.priceText}</p>
           <ul>{t.priceBullets.map((item) => <li key={item}>✓ {item}</li>)}</ul>
-          <div className="tcx-price-row"><div><strong>14,99</strong><span>€</span><small>{t.once}</small></div><button type="button" disabled>{t.locked}</button></div>
+          <div className="tcx-price-row"><div><strong>9,99</strong><span>€</span><small>{t.once}</small></div><button type="button" disabled>{t.locked}</button></div>
         </div>
         <div className="tcx-demo-card"><span>03</span><h3>{t.start}</h3><p>{t.heroText}</p><TrialLauncher label={t.start} loadingLabel={t.starting} errorLabel={t.trialError} className="tcx-secondary tcx-demo-button" /></div>
       </section>
