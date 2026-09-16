@@ -47,7 +47,8 @@ test("beginner install guide documents Chrome home-screen installation and direc
   assert.match(installGuide, /Dodaj na početni ekran/);
   assert.match(installGuide, /beforeinstallprompt/);
   assert.match(installGuide, /appinstalled/);
-  assert.match(installGuide, /standalone/);
+  assert.match(installGuide, /display-mode: standalone/);
+  assert.match(installGuide, /tachocommand-locale/);
 });
 
 test("PWA identity opens the TachoCommand shell instead of the legacy field-test start URL", () => {
