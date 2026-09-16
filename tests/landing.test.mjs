@@ -17,7 +17,8 @@ test("public root tells the field-proven 2026-09-16 product story", () => {
   assert.match(landing, /56 \/ 56/);
   assert.match(landing, /67\.295 B/);
   assert.match(landing, /data-release=\{LANDING_RELEASE\}/);
-  assert.match(appPage, /window\.location\.replace/);
+  assert.match(appPage, /PremiumAppClient/);
+  assert.doesNotMatch(appPage, /window\.location\.replace/);
 });
 
 test("landing offers SR, EN and DE without fabricating field screenshots", () => {
