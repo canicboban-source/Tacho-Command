@@ -6,7 +6,7 @@ const clientSource = await readFile(new URL("../app/field-test/read-only-field-t
 const pageSource = await readFile(new URL("../app/field-test/page.tsx", import.meta.url), "utf8");
 const manifest = JSON.parse(await readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
 const serviceWorker = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
-const appRecovery = await readFile(new URL("../app/app/page.tsx", import.meta.url), "utf8");
+const appEntry = await readFile(new URL("../app/app/page.tsx", import.meta.url), "utf8");
 const workerSource = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
 
 test("field-test route uses the read-only core candidate", () => {
@@ -63,13 +63,13 @@ test("field candidate exposes a copyable diagnostic log", () => {
   assert.match(clientSource, /navigator\.clipboard\.writeText/);
 });
 
-test("PWA opens the OLED TachoCommand shell while legacy recovery remains explicitly versioned", () => {
+test("PWA opens the OLED TachoCommand shell while legacy worker recovery remains explicitly versioned", () => {
   assert.equal(manifest.start_url, "/");
   assert.equal(manifest.short_name, "TachoCommand");
   assert.doesNotMatch(manifest.name, /Core Field Test|0\.31|RHMI|0\.16/);
   assert.match(serviceWorker, /tachocommand-shell-v32-oled-landing/);
   assert.match(serviceWorker, /caches\.match\("\/"\)/);
-  assert.match(appRecovery, /recovered=031/);
+  assert.match(appEntry, /PremiumAppClient/);
   assert.match(workerSource, /recovered=031/);
-  assert.doesNotMatch(`${appRecovery}\n${workerSource}`, /recovered=016/);
+  assert.doesNotMatch(`${appEntry}\n${workerSource}`, /recovered=016/);
 });
