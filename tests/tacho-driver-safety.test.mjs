@@ -61,7 +61,7 @@ test("other work and availability do not reset Article 7 driving accumulation", 
   assert.equal(result.warningActive, true);
 });
 
-test("EU legal verdicts are disabled for regular passenger routes <=50 km", () => {
+test("EU legal verdicts are disabled for regular passenger routes <=50 km without national profile", () => {
   const result = evaluateDriverSafety([day("2026-09-16", [seg(0, 400, "driving")])], {
     legalProfile: LEGAL_PROFILES.REGULAR_PASSENGER_LE_50KM,
   });
@@ -78,9 +78,74 @@ test("unknown legal scope suppresses infringement verdicts", () => {
 
 test("weekly 56h and two-week 90h limits are evaluated only on consecutive calendar weeks", () => {
   const days = [];
-  for (let i = 0; i < 7; i += 1) days.push(day(`2026-08-${String(3 + i).padStart(2, "0")}`, [seg(0, 480, "driving")])); // 56h
-  for (let i = 0; i < 5; i += 1) days.push(day(`2026-08-${String(10 + i).padStart(2, "0")}`, [seg(0, 480, "driving")])); // +40h => 96h
+  for (let i = 0; i < 7; i += 1) days.push(day(`2026-08-${String(3 + i).padStart(2, "0")}`, [seg(0, 480, "driving")]));
+  for (let i = 0; i < 5; i += 1) days.push(day(`2026-08-${String(10 + i).padStart(2, "0")}`, [seg(0, 480, "driving")]));
   const result = evaluateEu561WeeklyDriving(days);
   assert.equal(result.alerts.some((x) => x.kind === "weekly-driving-exceeded"), false);
   assert.equal(result.alerts.some((x) => x.kind === "fortnight-driving-exceeded"), true);
+});
+
+test("Austrian regional <=50 km profile warns at 3h45 and exceeds only after 4h", () => {
+  const warning = evaluateDriverSafety([day("2026-09-16", [seg(0, 225, "driving")])], {
+    legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM,
+  });
+  assert.equal(warning.continuousDriving.warningAtMinutes, 225);
+  assert.equal(warning.continuousDriving.legalLimitMinutes, 240);
+  assert.equal(warning.operationalAlerts.length, 1);
+  assert.equal(warning.legalAlerts.length, 0);
+
+  const exact = evaluateDriverSafety([day("2026-09-16", [seg(0, 240, "driving")])], {
+    legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM,
+  });
+  assert.equal(exact.legalAlerts.length, 0);
+
+  const over = evaluateDriverSafety([day("2026-09-16", [seg(0, 241, "driving")])], {
+    legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM,
+  });
+  assert.equal(over.legalAlerts.some((x) => x.kind === "continuous-driving-exceeded"), true);
+});
+
+test("Austrian regional profile accepts a single 30, 40 or 45 minute break", () => {
+  for (const breakMinutes of [30, 40, 45]) {
+    const result = evaluateDriverSafety([day("2026-09-16", [
+      seg(0, 180, "driving"),
+      seg(180, 180 + breakMinutes, "rest"),
+      seg(180 + breakMinutes, 280 + breakMinutes, "driving"),
+    ])], { legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM });
+    assert.equal(result.continuousDriving.currentDrivingSinceQualifyingBreakMinutes, 100);
+    assert.equal(result.continuousDriving.resets.some((x) => x.reason === "at-full-30-plus"), true);
+  }
+});
+
+test("Austrian regional profile accepts 2x20 minute split breaks", () => {
+  const result = evaluateDriverSafety([day("2026-09-16", [
+    seg(0, 90, "driving"), seg(90, 110, "rest"),
+    seg(110, 180, "driving"), seg(180, 200, "rest"),
+    seg(200, 260, "driving"),
+  ])], { legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM });
+  assert.equal(result.continuousDriving.currentDrivingSinceQualifyingBreakMinutes, 60);
+  assert.equal(result.continuousDriving.resets.some((x) => x.reason === "at-2x20"), true);
+});
+
+test("Austrian regional profile accepts 3x15 minute split breaks", () => {
+  const result = evaluateDriverSafety([day("2026-09-16", [
+    seg(0, 60, "driving"), seg(60, 75, "rest"),
+    seg(75, 135, "driving"), seg(135, 150, "rest"),
+    seg(150, 210, "driving"), seg(210, 225, "rest"),
+    seg(225, 285, "driving"),
+  ])], { legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM });
+  assert.equal(result.continuousDriving.currentDrivingSinceQualifyingBreakMinutes, 60);
+  assert.equal(result.continuousDriving.resets.some((x) => x.reason === "at-3x15"), true);
+});
+
+test("Austrian regional profile does not reset on an incomplete split", () => {
+  const result = evaluateDriverSafety([day("2026-09-16", [
+    seg(0, 90, "driving"), seg(90, 110, "rest"),
+    seg(110, 190, "driving"), seg(190, 205, "rest"),
+    seg(205, 275, "driving"),
+  ])], { legalProfile: LEGAL_PROFILES.AT_REGIONAL_PASSENGER_LE_50KM });
+  assert.equal(result.continuousDriving.currentDrivingSinceQualifyingBreakMinutes, 240);
+  assert.equal(result.continuousDriving.resets.length, 0);
+  assert.equal(result.continuousDriving.atRegionalBreakProgress.qualifying15MinuteParts, 2);
+  assert.equal(result.continuousDriving.atRegionalBreakProgress.qualifying20MinuteParts, 1);
 });
