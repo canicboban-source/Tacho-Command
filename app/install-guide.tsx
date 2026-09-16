@@ -78,11 +78,7 @@ function subscribeLocale(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => undefined;
   const handler = () => onStoreChange();
   window.addEventListener("storage", handler);
-  window.addEventListener("tachocommand-locale", handler);
-  return () => {
-    window.removeEventListener("storage", handler);
-    window.removeEventListener("tachocommand-locale", handler);
-  };
+  return () => window.removeEventListener("storage", handler);
 }
 
 export default function InstallGuide() {
