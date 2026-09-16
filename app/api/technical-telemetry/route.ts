@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const db = getDb();
+    const db = await getDb();
     const createdAt = Math.floor(Date.now() / 1000);
     const cutoff = technicalTelemetryRetentionCutoffEpochSeconds(createdAt * 1000);
 
