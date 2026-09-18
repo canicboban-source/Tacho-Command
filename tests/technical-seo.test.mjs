@@ -12,7 +12,7 @@ const adminLayout = fs.readFileSync(new URL("../app/admin/layout.tsx", import.me
 
 test("root metadata uses the verified production domain", () => {
   assert.match(rootLayout, /metadataBase:\s*new URL\("https:\/\/tachocommand\.com"\)/);
-  assert.match(home, /canonical:\s*"\/" /);
+  assert.match(home, /canonical:\s*"\/"\s*,/);
   assert.match(home, /openGraph:/);
   assert.match(home, /twitter:/);
 });
@@ -33,7 +33,7 @@ test("robots blocks private operational routes and advertises sitemap", () => {
 
 test("sitemap contains only public landing and legal pages", () => {
   for (const path of ["/", "/privacy", "/terms", "/impressum"]) {
-    assert.match(sitemap, new RegExp(`origin\\}${path.replace("/", "\\/")}`));
+    assert.ok(sitemap.includes(`url: \`\${origin}${path}\``));
   }
   assert.doesNotMatch(sitemap, /\/admin|\/app|\/field-test|\/api\//);
 });
