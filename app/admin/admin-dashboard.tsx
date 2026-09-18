@@ -70,8 +70,35 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      try {
+        const response = await fetch("/api/admin/overview", { cache: "no-store" });
+        if (cancelled) return;
+        if (response.status === 401) {
+          setOverview(null);
+          setMode("login");
+          return;
+        }
+        if (!response.ok) {
+          setMode("unavailable");
+          return;
+        }
+        const payload = await response.json() as Overview;
+        if (cancelled) return;
+        setOverview(payload);
+        setMode("ready");
+      } catch {
+        if (!cancelled) setMode("unavailable");
+      }
+    };
+
+    void bootstrap();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = async (event: FormEvent) => {
     event.preventDefault();
