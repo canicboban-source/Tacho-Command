@@ -1,9 +1,17 @@
+import type {
+  AppV2FieldSessionResult,
+  AppV2FieldTransport,
+} from "./app-v2-field-session.js";
+
+export type AppV2LiveAttemptWithTelemetryResult = AppV2FieldSessionResult & Readonly<{
+  attemptCode: string | null;
+  telemetryStatus: string;
+  telemetryAcceptedCount: number | null;
+  telemetryEventCount: number;
+}>;
+
 export declare function runAppV2LiveAttemptWithTelemetry(input?: Readonly<{
-  openTransport?: () => Promise<{
-    deviceLabel?: string | null;
-    sendUds: (payload: readonly number[], timeoutMs?: number) => Promise<readonly number[] | null>;
-    close?: () => Promise<void> | void;
-  } | null>;
+  openTransport?: () => Promise<AppV2FieldTransport | null>;
   cryptoImpl?: {
     randomUUID: () => string;
     getRandomValues: (array: Uint8Array) => Uint8Array;
@@ -13,12 +21,4 @@ export declare function runAppV2LiveAttemptWithTelemetry(input?: Readonly<{
     accepted: number;
   }>>;
   now?: () => Date;
-}>): Promise<Readonly<{
-  status: string;
-  session: Readonly<Record<string, any>>;
-  telemetry: Readonly<Record<string, any>> | null;
-  attemptCode: string | null;
-  telemetryStatus: string;
-  telemetryAcceptedCount: number | null;
-  telemetryEventCount: number;
-}>>;
+}>): Promise<AppV2LiveAttemptWithTelemetryResult>;
