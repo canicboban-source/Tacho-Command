@@ -35,7 +35,9 @@ test("browser card transport follows bounded golden-compatible full-read sequenc
   const credits = new FakeCharacteristic("db9c4128-bff3-41fe-a306-fb6f9a8aeb2d");
 
   const commandLog = [];
-  const payload = [0x05,0x04,0x02,0x00,0x02,0xaa,0xbb];
+  const payload = [0x05,0x04,0x02,0x00,0xfa,...new Array(250).fill(0x11)];
+  const firstPayload = payload.slice(0, 251);
+  const finalPayload = payload.slice(251);
 
   fifo.onWrite = async (write) => {
     commandLog.push(write);
@@ -45,14 +47,13 @@ test("browser card transport follows bounded golden-compatible full-read sequenc
     queueMicrotask(() => credits.emit([1]));
 
     if (body[0] === 0x80 && body[4] === 0x83) {
-      queueMicrotask(() => fifo.emit(wrapIts(ddp([0x76,0x06,0x00,0x02,...payload]))));
+      queueMicrotask(() => fifo.emit(wrapIts(ddp([0x76,0x06,0x00,0x02,...finalPayload]))));
       return;
     }
     if (sid === 0x81) queueMicrotask(() => fifo.emit(wrapIts(ddp([0xc1,0xea,0x8f]))));
     else if (sid === 0x10) queueMicrotask(() => fifo.emit(wrapIts(ddp([0x50,0x81]))));
     else if (sid === 0x35) queueMicrotask(() => fifo.emit(wrapIts(ddp([0x75,0x00,0xff]))));
     else if (sid === 0x36) {
-      const firstPayload = new Array(251).fill(0x11);
       queueMicrotask(() => fifo.emit(wrapIts(ddp([0x76,0x06,0x00,0x01,...firstPayload]))));
     }
     else if (sid === 0x37) queueMicrotask(() => fifo.emit(wrapIts(ddp([0x77]))));
