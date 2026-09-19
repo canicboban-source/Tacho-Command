@@ -114,8 +114,8 @@ function LiveScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
 
       <section className={styles.activityCard}>
         <span>TRENUTNA AKTIVNOST</span>
-        <strong>{state.live ? ACTIVITY_SR[state.currentActivity] : "—"}</strong>
-        <p>{state.live ? "LIVE podaci su potvrđeni sa tahografa." : "Poveži tahograf da bi trenutna aktivnost bila potvrđena."}</p>
+        <strong>{state.liveSnapshotAvailable ? ACTIVITY_SR[state.currentActivity] : "—"}</strong>
+        <p>{state.live ? "LIVE podaci su potvrđeni sa tahografa." : state.liveSnapshotAvailable ? "Prikazano je poslednje potvrđeno očitavanje; aktivna veza je završena." : "Poveži tahograf da bi trenutna aktivnost bila potvrđena."}</p>
       </section>
 
       <section className={styles.metricPanel}>
