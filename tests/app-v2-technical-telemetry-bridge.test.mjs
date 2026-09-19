@@ -76,6 +76,48 @@ test("production App V2 telemetry posts only after the bounded LIVE transport is
   }
 });
 
+test("optional null DID values are not misreported as successful telemetry", async () => {
+  let posted = null;
+  const sendUds = async (request) => {
+    const did = (request[1] << 8) | request[2];
+    if (did === 0xf903) return framedPositive(did, 0x00);
+    if (did === 0xf923) return framedPositive(did, 0x00, 0x1e);
+    if (did === 0xf925) return framedPositive(did, 0x00, 0x0f);
+    return [1, 1, 0x7f, 0x22, 0x31];
+  };
+
+  const result = await runAppV2LiveAttemptWithTelemetry({
+    cryptoImpl: deterministicCrypto(),
+    openTransport: async () => ({ sendUds, close: async () => {} }),
+    postTelemetry: async (events) => {
+      posted = events;
+      return { status: "accepted", accepted: events.length };
+    },
+  });
+
+  assert.equal(result.status, "live");
+  assert.deepEqual(
+    posted.filter((event) => event.event === "did_read").map((event) => event.did),
+    ["F903", "F923", "F925"],
+  );
+});
+
+test("telemetry identity failure never blocks the LIVE read", async () => {
+  const result = await runAppV2LiveAttemptWithTelemetry({
+    cryptoImpl: {},
+    openTransport: async () => ({
+      sendUds: workingSendUds(),
+      close: async () => {},
+    }),
+  });
+
+  assert.equal(result.status, "live");
+  assert.equal(result.attemptCode, null);
+  assert.equal(result.telemetryStatus, "unavailable");
+  assert.equal(result.telemetryAcceptedCount, null);
+  assert.equal(result.telemetryEventCount, 0);
+});
+
 test("telemetry delivery failure never downgrades a verified LIVE result", async () => {
   const result = await runAppV2LiveAttemptWithTelemetry({
     cryptoImpl: deterministicCrypto(),
