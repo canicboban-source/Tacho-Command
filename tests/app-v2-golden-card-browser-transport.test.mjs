@@ -50,7 +50,9 @@ test("browser card transport follows bounded golden-compatible full-read sequenc
       queueMicrotask(() => fifo.emit(wrapIts(ddp([0x76,0x06,0x00,0x02,...finalPayload]))));
       return;
     }
-    if (sid === 0x81) queueMicrotask(() => fifo.emit(wrapIts(ddp([0xc1,0xea,0x8f]))));
+    if (body[0] === 0x81 && body[1] === 0xee && body[2] === 0xf0 && body[3] === 0x81) {
+      queueMicrotask(() => fifo.emit(wrapIts(ddp([0xc1,0xea,0x8f]))));
+    }
     else if (sid === 0x10) queueMicrotask(() => fifo.emit(wrapIts(ddp([0x50,0x81]))));
     else if (sid === 0x35) queueMicrotask(() => fifo.emit(wrapIts(ddp([0x75,0x00,0xff]))));
     else if (sid === 0x36) {
