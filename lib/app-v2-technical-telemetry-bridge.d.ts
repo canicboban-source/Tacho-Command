@@ -17,7 +17,7 @@ export declare function runAppV2LiveAttemptWithTelemetry(input?: Readonly<{
   status: string;
   session: Readonly<Record<string, any>>;
   telemetry: Readonly<Record<string, any>> | null;
-  attemptCode: string;
+  attemptCode: string | null;
   telemetryStatus: string;
   telemetryAcceptedCount: number | null;
   telemetryEventCount: number;
