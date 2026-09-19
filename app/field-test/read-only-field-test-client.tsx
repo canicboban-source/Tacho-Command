@@ -164,7 +164,8 @@ function DtcoPairingGuide() {
 }
 
 export default function ReadOnlyFieldTestClient() {
-  const [running, setRunning] = useState(false);\n  const [showPairingGuide, setShowPairingGuide] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [showPairingGuide, setShowPairingGuide] = useState(false);
   const [connected, setConnected] = useState(false);
   const [deviceName, setDeviceName] = useState("—");
   const [activity, setActivity] = useState("unknown");
