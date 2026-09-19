@@ -80,7 +80,7 @@ function DtcoPairingGuide() {
     >
       <h2 style={{ margin: "0 0 6px", fontSize: 18 }}>Prvi put povezuješ telefon?</h2>
       <p style={{ margin: "0 0 12px", fontSize: 14 }}>
-        Uradi redom. Ako je telefon već uparen i vidiš ga u "Geräte verwalten", nemoj ga brisati.
+        Uradi redom. Ako je telefon već uparen i vidiš ga u „Geräte verwalten“, nemoj ga brisati.
       </p>
 
       <div style={sectionStyle}>
