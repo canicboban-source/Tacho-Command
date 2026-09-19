@@ -1,0 +1,50 @@
+name: Cloudflare preview deploy
+
+on:
+  push:
+    branches:
+      - infra/independent-cloudflare-hosting-20260919
+    paths:
+      - .github/workflows/cloudflare-preview-deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tachocommand-cloudflare-preview
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy isolated workers.dev candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build independent Cloudflare artifact
+        run: npm run build:cloudflare
+
+      - name: Verify production D1 binding
+        run: >-
+          node -e "const c=require('./dist/server/wrangler.json');
+          const db=c.d1_databases?.filter(x=>x.binding==='DB')??[];
+          if(db.length!==1||db[0].database_name!=='tachocommand-prod'||db[0].database_id!=='0796463f-28ee-485a-8cc4-40b213e7ae26')
+          process.exit(1);"
+
+      - name: Deploy workers.dev candidate
+        run: npx wrangler deploy --config dist/server/wrangler.json
