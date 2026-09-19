@@ -118,9 +118,9 @@ test("field candidate includes the physically verified DTCO 4.1a pairing guide w
   }
 
   const guideStart = clientSource.indexOf("function DtcoPairingGuide()");
-  const connectStart = clientSource.indexOf("const connectAndStart");
-  assert.ok(guideStart >= 0 && connectStart > guideStart);
-  const guideSource = clientSource.slice(guideStart, connectStart);
+  const guideEnd = clientSource.indexOf("export default function ReadOnlyFieldTestClient()", guideStart);
+  assert.ok(guideStart >= 0 && guideEnd > guideStart);
+  const guideSource = clientSource.slice(guideStart, guideEnd);
   for (const forbidden of ["requestDevice", "queueGattWrite", "buildReadDataByIdentifier", "postTechnicalTelemetry"]) {
     assert.equal(guideSource.includes(forbidden), false, forbidden + " must not be part of pairing help");
   }
