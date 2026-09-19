@@ -15,7 +15,7 @@ const withChecksum = (bytes) => Uint8Array.from([...bytes, checksum(bytes)]);
 test("golden-compatible command bytes stay identical to preserved 0.32c contract", () => {
   assert.deepEqual(APP_V2_GOLDEN_CARD_COMMANDS.startCommunication, [0x81,0xee,0xf0,0x81,0xe0]);
   assert.deepEqual(APP_V2_GOLDEN_CARD_COMMANDS.startDiagnosticSession, [0x80,0xee,0xf0,0x02,0x10,0x81,0xf1]);
-  assert.deepEqual(APP_V2_GOLDEN_CARD_COMMANDS.cardSlot1, [0x80,0xee,0xf0,0x03,0x36,0x06,0x01,0xa4]);
+  assert.deepEqual(APP_V2_GOLDEN_CARD_COMMANDS.cardSlot1, [0x80,0xee,0xf0,0x03,0x36,0x06,0x01,0x9e]);
   assert.deepEqual(APP_V2_GOLDEN_CARD_COMMANDS.transferExit, [0x80,0xee,0xf0,0x01,0x37,0x96]);
   assert.deepEqual(APP_V2_GOLDEN_CARD_COMMANDS.stopCommunication, [0x80,0xee,0xf0,0x01,0x82,0xe1]);
 });
