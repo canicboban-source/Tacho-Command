@@ -31,25 +31,29 @@ export default function AppV2Client() {
   const [capturedAtIso, setCapturedAtIso] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const snapshot = loadLastGoodCardSnapshot(window.localStorage);
-      if (!snapshot) {
-        setRestoreState("empty");
-        return;
-      }
+    const timer = window.setTimeout(() => {
+      try {
+        const snapshot = loadLastGoodCardSnapshot(window.localStorage);
+        if (!snapshot) {
+          setRestoreState("empty");
+          return;
+        }
 
-      const restoredCard = cardStateFromLastGoodCardSnapshot(snapshot);
-      if (!restoredCard) {
+        const restoredCard = cardStateFromLastGoodCardSnapshot(snapshot);
+        if (!restoredCard) {
+          setRestoreState("invalid");
+          return;
+        }
+
+        setCardState(restoredCard);
+        setCapturedAtIso(snapshot.capturedAtIso);
+        setRestoreState("restored");
+      } catch {
         setRestoreState("invalid");
-        return;
       }
+    }, 0);
 
-      setCardState(restoredCard);
-      setCapturedAtIso(snapshot.capturedAtIso);
-      setRestoreState("restored");
-    } catch {
-      setRestoreState("invalid");
-    }
+    return () => window.clearTimeout(timer);
   }, []);
 
   const state = useMemo(() => createFieldProvenProductState({
