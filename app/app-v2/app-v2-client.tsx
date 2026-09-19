@@ -9,7 +9,7 @@ import {
 } from "../../lib/last-good-card-snapshot.js";
 import { formatTachoCommandVersionLine } from "../../lib/product-version.js";
 import { createAppV2LiveSession } from "../../lib/app-v2-live-session.js";
-import { openAppV2FieldTransport } from "../../lib/app-v2-field-transport.js";
+import { openBrowserAppV2FieldTransport } from "../../lib/app-v2-field-transport.js";
 import { runAppV2FieldSession } from "../../lib/app-v2-field-session.js";
 import styles from "./app-v2.module.css";
 
@@ -75,17 +75,8 @@ export default function AppV2Client() {
     setLiveRunState("running");
     setLiveSession(createAppV2LiveSession({ phase: "connecting" }));
 
-    const bluetooth = (navigator as Navigator & {
-      bluetooth?: {
-        requestDevice: (options: {
-          acceptAllDevices: boolean;
-          optionalServices: readonly string[];
-        }) => Promise<unknown>;
-      };
-    }).bluetooth;
-
     const result = await runAppV2FieldSession({
-      openTransport: async () => openAppV2FieldTransport({ bluetooth }),
+      openTransport: () => openBrowserAppV2FieldTransport(),
     });
 
     if (result.status === "live") {
