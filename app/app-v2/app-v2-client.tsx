@@ -80,7 +80,7 @@ export default function AppV2Client() {
     });
 
     if (result.status === "live") {
-      setLastLiveSnapshot({ ...result.session.productLive, connected: true });
+      setLastLiveSnapshot({ ...result.session.productLive, connected: false, snapshotConfirmed: true });
       setLiveSession(createAppV2LiveSession({
         phase: "disconnected",
         deviceLabel: result.session.productLive.deviceLabel,
