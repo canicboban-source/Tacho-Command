@@ -108,7 +108,7 @@ function LiveScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
   return (
     <div className={styles.screen}>
       <div className={styles.screenTopline}>
-        <span>LIVE • {state.live ? "POTVRĐENO SA TAHOGRAFA" : "NEMA AKTIVNE VEZE"}</span>
+        <span>{state.live ? "LIVE • POTVRĐENO SA TAHOGRAFA" : state.liveSnapshotAvailable ? "POSLEDNJE POTVRĐENO OČITAVANJE" : "NEMA AKTIVNE VEZE"}</span>
         <small>{state.lastLiveReadLabel ? "Poslednje očitavanje: " + state.lastLiveReadLabel : "Još nema očitavanja"}</small>
       </div>
 
