@@ -12,17 +12,27 @@ test("field-proven UI reconstruction exposes all observed product tabs", () => {
   }
 });
 
-test("reconstruction includes observed product language", () => {
+test("V3 keeps driver-facing language concise", () => {
   for (const phrase of [
-    "Vreme u kontekstu.",
-    "Svaki dan, u jednoj liniji.",
-    "Prvo ono što traži reakciju.",
-    "Status bez izlaganja identiteta.",
+    "Poveži tahograf",
+    "Očitaj karticu",
+    "DVE NEDELJE",
+    "Nema trenutnog upozorenja.",
     "Kartica je bezbedno očitana",
-    "TEHNIČKA DIJAGNOSTIKA",
+    "Podaci ostaju na telefonu",
   ]) {
     assert.ok(client.includes(phrase), phrase + " must be present");
   }
+  for (const removed of ["DTCO F99A", "DTCO F99B", "14 DANA", "JEZIK APLIKACIJE"]) {
+    assert.equal(client.includes(removed), false, removed + " must stay out of the V3 driver surface");
+  }
+});
+
+test("V3 exposes one contextual primary action and automatic diagnostics stay outside the UI", () => {
+  assert.ok(client.includes('controls.phase === "connected" ? controls.onReadCard : controls.onConnect'));
+  assert.ok(client.includes("Pokušaj ponovo"));
+  assert.equal(client.includes("Pošalji dijagnostiku"), false);
+  assert.equal(client.includes("Šifra pokušaja:"), false);
 });
 
 test("reconstruction stays data-driven and contains no personal field fixture", () => {
@@ -102,4 +112,3 @@ test("56-day overview uses a real 00-to-24-hour axis instead of proportional act
   assert.ok(css.includes(".historyHourLabels"));
   assert.ok(css.includes(".timeline > span { position: absolute"));
 });
-

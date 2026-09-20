@@ -6,6 +6,16 @@ import type { FieldProvenActivity, FieldProvenHistoryDay, FieldProvenHistorySegm
 
 export type ProductTab = "live" | "periods" | "history" | "attention" | "card";
 
+type ProductControls = Readonly<{
+  phase: "idle" | "connecting" | "connected" | "card-reading" | "error";
+  restoreState: "checking" | "restored" | "empty" | "invalid";
+  restoredLabel: string | null;
+  errorText: string | null;
+  versionLine: string;
+  onConnect: () => void;
+  onReadCard: () => void;
+}>;
+
 const nav: readonly Readonly<{ id: ProductTab; label: string; glyph: string }>[] = Object.freeze([
   Object.freeze({ id: "live", label: "LIVE", glyph: "●" }),
   Object.freeze({ id: "periods", label: "Periodi", glyph: "▤" }),
@@ -71,7 +81,7 @@ function IdentityHeader({ state }: Readonly<{ state: FieldProvenProductState }>)
           <div className={styles.brandMark}>TC</div>
           <div className={styles.brandText}>
             <strong>TachoCommand</strong>
-            <span>PROFESIONALNI INSTRUMENT VOZAČA</span>
+            <span>INSTRUMENT ZA VOZAČE</span>
           </div>
         </div>
         <div className={state.live ? styles.livePill : styles.offlinePill}>
@@ -82,21 +92,21 @@ function IdentityHeader({ state }: Readonly<{ state: FieldProvenProductState }>)
 
       <section className={styles.identityStrip}>
         <div>
-          <span className={styles.identityLabel}>VOZAČ</span>
-          <strong>{state.driverName ?? "Identitet nije očitan"}</strong>
-          <small>{state.cardLast4 ? "Kartica •••• " + state.cardLast4 : "Kartica nije očitana"}</small>
+          <span className={styles.identityLabel}>KARTICA</span>
+          <strong>{state.slotLabel ?? "Čeka očitavanje"}</strong>
+          <small>{state.cardReadComplete ? "Očitana i sačuvana lokalno" : "Kartica još nije očitana"}</small>
         </div>
         <div>
           <span className={styles.identityLabel}>TAHOGRAF</span>
           <strong>{state.tachographLabel ?? "Nije povezan"}</strong>
-          <small>{state.tachographLabel ? "Poslednji odobreni uređaj" : "Čeka povezivanje"}</small>
+          <small>{state.tachographLabel ? "Poslednji povezani uređaj" : "Čeka povezivanje"}</small>
         </div>
       </section>
     </>
   );
 }
 
-function LiveScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
+function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
   const progress = clampPercent(state.continuousProgressPercent);
   const progressBandClass = {
     neutral: styles.progressNeutral,
@@ -108,9 +118,34 @@ function LiveScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
   return (
     <div className={styles.screen}>
       <div className={styles.screenTopline}>
-        <span>{state.live ? "LIVE • POTVRĐENO SA TAHOGRAFA" : state.liveSnapshotAvailable ? "POSLEDNJE POTVRĐENO OČITAVANJE" : "NEMA AKTIVNE VEZE"}</span>
-        <small>{state.lastLiveReadLabel ? "Poslednje očitavanje: " + state.lastLiveReadLabel : "Još nema očitavanja"}</small>
+        <span>{state.live ? "LIVE · POTVRĐENO SA TAHOGRAFA" : state.liveSnapshotAvailable ? "POSLEDNJE SAČUVANO OČITAVANJE" : "TAHOGRAF NIJE POVEZAN"}</span>
+        <small>{state.lastLiveReadLabel ? state.lastLiveReadLabel : "Još nema očitavanja"}</small>
       </div>
+
+      <section className={styles.primaryControl} data-phase={controls.phase}>
+        <div>
+          <span>{controls.phase === "connected" || controls.phase === "card-reading" ? "KARTICA" : "VEZA"}</span>
+          <strong>
+            {controls.phase === "connecting" && "Povezivanje i LIVE očitavanje…"}
+            {controls.phase === "card-reading" && "Očitavanje kartice je u toku…"}
+            {controls.phase === "connected" && "Tahograf je spreman za čitanje kartice"}
+            {controls.phase === "error" && "Očitavanje nije završeno"}
+            {controls.phase === "idle" && "Poveži tahograf za LIVE podatke"}
+          </strong>
+          {controls.errorText ? <small>{controls.errorText}</small> : null}
+        </div>
+        <button
+          type="button"
+          onClick={controls.phase === "connected" ? controls.onReadCard : controls.onConnect}
+          disabled={controls.phase === "connecting" || controls.phase === "card-reading"}
+        >
+          {controls.phase === "connecting" && "Povezujem…"}
+          {controls.phase === "card-reading" && "Očitavam…"}
+          {controls.phase === "connected" && "Očitaj karticu"}
+          {controls.phase === "error" && "Pokušaj ponovo"}
+          {controls.phase === "idle" && "Poveži tahograf"}
+        </button>
+      </section>
 
       <section className={styles.activityCard}>
         <span>TRENUTNA AKTIVNOST</span>
@@ -142,24 +177,22 @@ function LiveScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
 
       <section className={styles.metricPanel}>
         <div className={styles.metricRow}>
-          <span>Danas · F99A</span>
+          <span>Danas</span>
           <strong>{formatMinutes(state.todayDrivingMinutes)}</strong>
         </div>
         <div className={styles.slimTrack}>
           <span style={{ width: String(clampPercent(state.todayDrivingMinutes === null ? null : state.todayDrivingMinutes / 6)) + "%" }} />
         </div>
-        <small>Dodirni za objašnjenje</small>
       </section>
 
       <section className={styles.metricPanel}>
         <div className={styles.metricRow}>
-          <span>Ove nedelje · F99B</span>
+          <span>Ove nedelje</span>
           <strong>{formatMinutes(state.weekDrivingMinutes)}</strong>
         </div>
         <div className={styles.slimTrack}>
           <span style={{ width: String(clampPercent(state.weekDrivingMinutes === null ? null : state.weekDrivingMinutes / 33.6)) + "%" }} />
         </div>
-        <small>Dodirni za objašnjenje</small>
       </section>
     </div>
   );
@@ -167,18 +200,14 @@ function LiveScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
 
 function PeriodsScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
   const periods = [
-    ["DANAS", formatMinutes(state.todayDrivingMinutes), "DTCO F99A"],
-    ["OVA NEDELJA", formatMinutes(state.weekDrivingMinutes), "DTCO F99B"],
-    ["14 DANA", formatMinutes(state.fortnightDrivingMinutes), "Iz istorije kartice"],
+    ["DANAS", formatMinutes(state.todayDrivingMinutes), "Dnevna vožnja"],
+    ["OVA NEDELJA", formatMinutes(state.weekDrivingMinutes), "Tekuća nedelja"],
+    ["DVE NEDELJE", formatMinutes(state.fortnightDrivingMinutes), "Iz istorije kartice"],
   ] as const;
 
   return (
     <div className={styles.screen}>
-      <div className={styles.screenTopline}><span>PERIODI</span><small>Samo potvrđene vrednosti</small></div>
-      <div className={styles.pageIntro}>
-        <h1>Vreme u kontekstu.</h1>
-        <p>LIVE očitavanje daje trenutne zbirove. Potpuni periodi se popunjavaju iz bezbedno obrađene istorije kartice.</p>
-      </div>
+      <div className={styles.screenTopline}><span>PERIODI</span><small>Potvrđene vrednosti</small></div>
       <div className={styles.periodCards}>
         {periods.map(([label, value, source]) => (
           <section key={label} className={styles.periodCard}>
@@ -311,11 +340,7 @@ function HistoryScreen({ state }: Readonly<{ state: FieldProvenProductState }>) 
 
   return (
     <div className={styles.screen}>
-      <div className={styles.screenTopline}><span>ISTORIJA KARTICE</span><small>{state.historyDaysAvailable}/56 dana</small></div>
-      <div className={styles.pageIntro}>
-        <h1>Svaki dan, u jednoj liniji.</h1>
-        <p>Stvarna istorija VOŽNJE, RADA, RASPOLOŽIVOSTI i ODMORA. Dodirni dan za 24-časovni detalj.</p>
-      </div>
+      <div className={styles.screenTopline}><span>ISTORIJA KARTICE</span><small>{state.historyDaysAvailable} od 56 dana</small></div>
 
       <div className={styles.legend}>
         <span><i className={styles.drive} />Vožnja</span>
@@ -376,11 +401,6 @@ function AttentionScreen({ state }: Readonly<{ state: FieldProvenProductState }>
   return (
     <div className={styles.screen}>
       <div className={styles.screenTopline}><span>PAŽNJA</span><small>Nije pravni zaključak</small></div>
-      <div className={styles.pageIntro}>
-        <h1>Prvo ono što traži reakciju.</h1>
-        <p>Preventivna upozorenja ostaju odvojena od mogućih prekršaja i pravne procene.</p>
-      </div>
-
       <section className={hasAttention ? styles.attentionPanel : styles.okPanel}>
         <div className={hasAttention ? styles.attentionIcon : styles.okIcon}>{hasAttention ? "!" : "✓"}</div>
         <div>
@@ -392,16 +412,14 @@ function AttentionScreen({ state }: Readonly<{ state: FieldProvenProductState }>
   );
 }
 
-function CardScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
+function CardScreen({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
   return (
     <div className={styles.screen}>
-      <div className={styles.pageIntro}>
-        <h1>Status bez izlaganja identiteta.</h1>
-      </div>
+      <div className={styles.screenTopline}><span>KARTICA I VEZA</span><small>Podaci ostaju na telefonu</small></div>
 
       <div className={styles.statusGrid}>
         <section><span>SLOT</span><strong>{state.slotLabel ?? "Vozač 1 · Slot 1"}</strong></section>
-        <section><span>IDENTITET</span><strong>{state.driverName ?? "Nije očitan"}</strong></section>
+        <section><span>VOZAČ</span><strong>{state.driverName ?? "Nije očitan"}</strong></section>
         <section><span>POSLEDNJE LIVE OČITAVANJE</span><strong>{state.lastLiveReadLabel ?? "—"}</strong></section>
         <section><span>TAHOGRAF</span><strong>{state.tachographLabel ?? "—"}</strong></section>
       </div>
@@ -410,24 +428,14 @@ function CardScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
         <span>ISTORIJA KARTICE</span>
         <strong>{state.cardReadComplete ? "Kartica je bezbedno očitana" : "Kartica još nije očitana"}</strong>
         <p>{state.historyDaysAvailable}/56 dana</p>
+        {controls.restoreState === "restored" && controls.restoredLabel ? <small>Sačuvano {controls.restoredLabel}</small> : null}
       </section>
-
-      <section className={styles.languagePanel}>
-        <strong>JEZIK APLIKACIJE</strong>
-        <span>{state.localeLabel}</span>
-      </section>
-
-      <section className={styles.diagnosticsPanel}>
-        <span>● &nbsp; TEHNIČKA DIJAGNOSTIKA</span>
-        <strong>{state.telemetrySentCount === null ? "Nema potvrde o tehničkim događajima" : "Poslato " + String(state.telemetrySentCount) + " tehničkih događaja"}</strong>
-        <p>Bez vrednosti sa kartice, imena, broja kartice, vozila, lokacije i punog Bluetooth naziva. Čuvanje najviše 60 dana.</p>
-        {state.attemptCode ? <code>Šifra pokušaja: {state.attemptCode}</code> : null}
-      </section>
+      <small className={styles.versionLine}>{controls.versionLine}</small>
     </div>
   );
 }
 
-export default function FieldProvenPremiumUi({ state }: Readonly<{ state: FieldProvenProductState }>) {
+export default function FieldProvenPremiumUi({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
   const [tab, setTab] = useState<ProductTab>("live");
 
   const screen = useMemo(() => {
@@ -439,11 +447,11 @@ export default function FieldProvenPremiumUi({ state }: Readonly<{ state: FieldP
       case "attention":
         return <AttentionScreen state={state} />;
       case "card":
-        return <CardScreen state={state} />;
+        return <CardScreen state={state} controls={controls} />;
       default:
-        return <LiveScreen state={state} />;
+        return <LiveScreen state={state} controls={controls} />;
     }
-  }, [state, tab]);
+  }, [controls, state, tab]);
 
   return (
     <div className={styles.shell}>
