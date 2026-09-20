@@ -6,6 +6,7 @@ on:
       - infra/independent-cloudflare-hosting-20260919
     paths:
       - .github/workflows/cloudflare-preview-deploy.yml
+      - app/landing-oled.css
   workflow_dispatch:
 
 permissions:
