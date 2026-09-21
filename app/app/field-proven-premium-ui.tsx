@@ -471,7 +471,7 @@ function CardScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
       <div className={styles.screenTopline}><span>KARTICA I VEZA</span><small>Podaci ostaju na telefonu</small></div>
 
       <div className={styles.statusGrid}>
-        <section><span>SLOT</span><strong>{state.slotLabel ?? "Vozač 1 · Slot 1"}</strong></section>
+        <section><span>KARTICA</span><strong>{state.cardLast4 ? `•••• ${state.cardLast4}` : "Nije očitana"}</strong></section>
         <section><span>VOZAČ</span><strong>{state.driverName ?? "Nije očitan"}</strong></section>
         <section><span>POSLEDNJE LIVE OČITAVANJE</span><strong>{state.lastLiveReadLabel ?? "—"}</strong></section>
         <section><span>TAHOGRAF</span><strong>{state.tachographLabel ?? "—"}</strong></section>
