@@ -73,7 +73,7 @@
 .pageIntro p { max-width: 660px; margin: 12px 0 0; color: #93a5b0; font-size: 15px; line-height: 1.55; }
 
 .activityCard, .metricPanel, .periodCard, .historyRow, .emptyPanel, .okPanel, .attentionPanel,
-.statusGrid section, .cardReadPanel, .languagePanel, .diagnosticsPanel {
+.statusGrid section, .cardReadPanel, .cardActionPanel, .languagePanel, .diagnosticsPanel {
   border: var(--tc-panel-line) solid var(--tc-line);
   background: #0e1f29;
 }
@@ -93,6 +93,21 @@
 .primaryControl button:disabled { cursor: progress; opacity: .62; }
 .primaryControl button:focus-visible { outline: 2px solid #eaf2f5; outline-offset: 3px; }
 .primaryControl[data-phase="error"] { border-color: rgba(255,107,97,.48); }
+
+.cardActionPanel {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px;
+  padding: 22px; border-radius: 24px;
+}
+.cardActionPanel > div { min-width: 0; }
+.cardActionPanel > div > span { color: #76909f; font-size: 11px; font-weight: 900; letter-spacing: .13em; }
+.cardActionPanel strong { display: block; margin-top: 8px; font-size: 17px; }
+.cardActionPanel small { display: block; margin-top: 9px; color: #8297a2; }
+.cardActionPanel button {
+  min-height: 48px; padding: 0 19px; border: 0; border-radius: 13px;
+  background: var(--tc-cyan); color: #04212a; font: inherit; font-size: 14px; font-weight: 900;
+}
+.cardActionPanel button:disabled { cursor: progress; opacity: .62; }
+.cardActionPanel[data-reading="true"] { border-color: rgba(63, 221, 154, .5); }
 
 .activityCard { padding: 23px; border-radius: 22px; }
 .activityCard > span { color: #76909f; font-size: 12px; letter-spacing: 0.12em; }
@@ -273,13 +288,9 @@
   background: rgba(48, 91, 111, 0.46);
 }
 .cardTransferTrack > span {
-  position: absolute; inset-block: 0; width: 38%; border-radius: inherit;
+  position: absolute; inset-block: 0; left: 0; border-radius: inherit;
   background: linear-gradient(90deg, #2fb7d8, #65e6b0);
-  animation: cardTransferSweep 1.25s ease-in-out infinite;
-}
-@keyframes cardTransferSweep {
-  from { left: -38%; }
-  to { left: 100%; }
+  transition: width 180ms linear;
 }
 
 .versionLine { display: block; color: #607b89; font-size: 10px; line-height: 1.45; text-align: center; }
@@ -331,6 +342,8 @@
   .okIcon, .attentionIcon { width: 62px; height: 62px; border-radius: 20px; font-size: 38px; }
   .primaryControl { grid-template-columns: 1fr; }
   .primaryControl button { width: 100%; }
+  .cardActionPanel { grid-template-columns: 1fr; }
+  .cardActionPanel button { width: 100%; }
 }
 
 @media (max-width: 390px) {

@@ -78,7 +78,18 @@ function segmentContext(day: FieldProvenHistoryDay, segment: FieldProvenHistoryS
   return null;
 }
 
-function IdentityHeader({ state }: Readonly<{ state: FieldProvenProductState }>) {
+function IdentityHeader({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
+  const headerStatus = controls.phase === "card-reading"
+    ? "OČITAVANJE"
+    : controls.phase === "connecting"
+      ? "POVEZIVANJE"
+      : state.live
+        ? "LIVE"
+        : controls.cardReadProgress?.complete || state.liveSnapshotAvailable
+          ? "SAČUVANO"
+          : "OFFLINE";
+  const activeStatus = headerStatus !== "OFFLINE";
+
   return (
     <>
       <header className={styles.topbar}>
@@ -89,16 +100,16 @@ function IdentityHeader({ state }: Readonly<{ state: FieldProvenProductState }>)
             <span>INSTRUMENT ZA VOZAČE</span>
           </div>
         </div>
-        <div className={state.live ? styles.livePill : styles.offlinePill}>
+        <div className={activeStatus ? styles.livePill : styles.offlinePill}>
           <span aria-hidden="true" />
-          {state.live ? "LIVE" : "OFFLINE"}
+          {headerStatus}
         </div>
       </header>
 
       <section className={styles.identityStrip}>
         <div>
           <span className={styles.identityLabel}>KARTICA</span>
-          <strong>{state.slotLabel ?? "Čeka očitavanje"}</strong>
+          <strong>{state.cardReadComplete ? "Kartica očitana" : state.slotLabel ?? "Čeka očitavanje"}</strong>
           <small>{state.cardReadComplete ? "Očitana i sačuvana lokalno" : "Kartica još nije očitana"}</small>
         </div>
         <div>
@@ -119,6 +130,10 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
     warning: styles.progressWarning,
     limit: styles.progressLimit,
   }[state.continuousBand];
+  const cardProgress = controls.cardReadProgress;
+  const cardVisualProgress = cardProgress?.complete
+    ? 100
+    : Math.min(96, Math.max(0, (cardProgress?.submessages ?? 0) / 2.8));
 
   return (
     <div className={styles.screen}>
@@ -129,36 +144,25 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
 
       <section className={styles.primaryControl} data-phase={controls.phase}>
         <div>
-          <span>{controls.phase === "connected" || controls.phase === "card-reading" ? "KARTICA" : "VEZA"}</span>
+          <span>LIVE VEZA</span>
           <strong>
             {controls.phase === "connecting" && "Povezivanje i LIVE očitavanje…"}
-            {controls.phase === "card-reading" && "Očitavanje kartice je u toku…"}
-            {controls.phase === "connected" && "Tahograf je spreman za čitanje kartice"}
-            {controls.phase === "error" && "Očitavanje nije završeno"}
+            {controls.phase === "card-reading" && "Sačekajte završetak očitavanja kartice"}
+            {controls.phase === "connected" && "LIVE podaci su sačuvani"}
+            {controls.phase === "error" && "LIVE očitavanje nije završeno"}
             {controls.phase === "idle" && "Poveži tahograf za LIVE podatke"}
           </strong>
           {controls.errorText ? <small>{controls.errorText}</small> : null}
-          {controls.phase === "card-reading" && controls.cardReadProgress ? (
-            <div className={styles.cardTransferProgress} aria-live="polite">
-              <div>
-                <span>Paketi: {controls.cardReadProgress.submessages}</span>
-                <span>Preuzeto: {(controls.cardReadProgress.byteLength / 1000).toLocaleString("sr-RS", { maximumFractionDigits: 1 })} KB</span>
-              </div>
-              <div className={styles.cardTransferTrack} aria-label="Očitavanje kartice je u toku">
-                <span />
-              </div>
-            </div>
-          ) : null}
         </div>
         <button
           type="button"
-          onClick={controls.phase === "connected" ? controls.onReadCard : controls.onConnect}
+          onClick={controls.onConnect}
           disabled={controls.phase === "connecting" || controls.phase === "card-reading"}
         >
           {controls.phase === "connecting" && "Povezujem…"}
-          {controls.phase === "card-reading" && "Očitavam…"}
-          {controls.phase === "connected" && "Očitaj karticu"}
-          {controls.phase === "error" && "Pokušaj ponovo"}
+          {controls.phase === "card-reading" && "Kartica se očitava…"}
+          {controls.phase === "connected" && "Osveži LIVE"}
+          {controls.phase === "error" && "Ponovi LIVE"}
           {controls.phase === "idle" && "Poveži tahograf"}
         </button>
       </section>
@@ -209,6 +213,39 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
         <div className={styles.slimTrack}>
           <span style={{ width: String(clampPercent(state.weekDrivingMinutes === null ? null : state.weekDrivingMinutes / 33.6)) + "%" }} />
         </div>
+      </section>
+
+      <section className={styles.cardActionPanel} data-reading={controls.phase === "card-reading" ? "true" : "false"}>
+        <div>
+          <span>KARTICA</span>
+          <strong>
+            {controls.phase === "card-reading"
+              ? "Očitavanje kartice je u toku…"
+              : cardProgress?.complete
+                ? "Očitavanje kartice je završeno"
+                : state.cardReadComplete
+                  ? "Kartica je sačuvana lokalno"
+                  : "Očitaj poslednjih 56 dana"}
+          </strong>
+          {cardProgress ? (
+            <div className={styles.cardTransferProgress} aria-live="polite">
+              <div>
+                <span>Paketi: {cardProgress.submessages}</span>
+                <span>Preuzeto: {(cardProgress.byteLength / 1000).toLocaleString("sr-RS", { maximumFractionDigits: 1 })} KB</span>
+              </div>
+              <div className={styles.cardTransferTrack} aria-label={cardProgress.complete ? "Očitavanje kartice je završeno" : "Količina primljenih podataka raste tokom očitavanja"}>
+                <span style={{ width: String(cardVisualProgress) + "%" }} />
+              </div>
+            </div>
+          ) : state.cardReadComplete ? <small>{state.historyDaysAvailable}/56 dana sačuvano</small> : null}
+        </div>
+        <button
+          type="button"
+          onClick={controls.onReadCard}
+          disabled={controls.phase === "connecting" || controls.phase === "card-reading"}
+        >
+          {controls.phase === "card-reading" ? "Očitavam…" : "Očitaj karticu"}
+        </button>
       </section>
     </div>
   );
@@ -471,7 +508,7 @@ export default function FieldProvenPremiumUi({ state, controls }: Readonly<{ sta
 
   return (
     <div className={styles.shell}>
-      <IdentityHeader state={state} />
+      <IdentityHeader state={state} controls={controls} />
       <main className={styles.content}>{screen}</main>
       <nav className={styles.bottomNav} aria-label="Glavna navigacija">
         {nav.map((item) => {

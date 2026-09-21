@@ -154,8 +154,8 @@ export default function AppV2Client() {
       setCardState(result.session.currentCard);
       setCapturedAtIso(result.session.capturedAtIso);
       setRestoreState("restored");
+      return;
     }
-    setCardReadProgress(null);
   };
 
   return (

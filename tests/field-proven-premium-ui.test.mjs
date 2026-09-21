@@ -28,19 +28,30 @@ test("V3 keeps driver-facing language concise", () => {
   }
 });
 
-test("V3 exposes one contextual primary action and automatic diagnostics stay outside the UI", () => {
-  assert.ok(client.includes('controls.phase === "connected" ? controls.onReadCard : controls.onConnect'));
-  assert.ok(client.includes("Pokušaj ponovo"));
+test("V3 separates the primary LIVE action from the occasional card read", () => {
+  assert.ok(client.includes("onClick={controls.onConnect}"));
+  assert.ok(client.includes("onClick={controls.onReadCard}"));
+  assert.ok(client.includes("Osveži LIVE"));
+  assert.ok(client.includes("Očitaj karticu"));
   assert.equal(client.includes("Pošalji dijagnostiku"), false);
   assert.equal(client.includes("Šifra pokušaja:"), false);
 });
 
 test("card read shows truthful live transfer counters without a fabricated total", () => {
-  assert.ok(client.includes("Paketi: {controls.cardReadProgress.submessages}"));
-  assert.ok(client.includes("controls.cardReadProgress.byteLength / 1000"));
+  assert.ok(client.includes("Paketi: {cardProgress.submessages}"));
+  assert.ok(client.includes("cardProgress.byteLength / 1000"));
   assert.ok(client.includes('aria-live="polite"'));
   assert.ok(css.includes(".cardTransferTrack"));
+  assert.ok(client.includes("cardProgress?.complete"));
+  assert.ok(client.includes('style={{ width: String(cardVisualProgress) + "%" }}'));
   assert.equal(client.includes("/ 269"), false);
+});
+
+test("header follows connection and saved-card state instead of staying offline", () => {
+  for (const status of ["POVEZIVANJE", "OČITAVANJE", "LIVE", "SAČUVANO", "OFFLINE"]) {
+    assert.ok(client.includes(status));
+  }
+  assert.ok(client.includes('state.cardReadComplete ? "Kartica očitana"'));
 });
 
 test("reconstruction stays data-driven and contains no personal field fixture", () => {
