@@ -1,0 +1,50 @@
+name: App V3 one-time production deploy
+
+on:
+  push:
+    branches:
+      - feature/app-v3-driver-instrument-20260920
+    paths:
+      - .github/workflows/app-v3-production-deploy.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tachocommand-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy verified production Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Bind existing production resources
+        run: >-
+          node -e "const fs=require('node:fs');
+          const p='dist/server/wrangler.json';
+          const c=JSON.parse(fs.readFileSync(p,'utf8'));
+          c.name='tachocommand';
+          c.d1_databases=[{binding:'DB',database_name:'tachocommand-prod',database_id:'0796463f-28ee-485a-8cc4-40b213e7ae26',migrations_dir:'./drizzle'}];
+          c.images={binding:'IMAGES'};
+          c.observability={enabled:true};
+          fs.writeFileSync(p,JSON.stringify(c));"
+      - name: Verify immutable production target
+        run: >-
+          node -e "const c=require('./dist/server/wrangler.json');
+          const db=c.d1_databases?.filter(x=>x.binding==='DB')??[];
+          if(c.name!=='tachocommand'||db.length!==1||db[0].database_name!=='tachocommand-prod'||db[0].database_id!=='0796463f-28ee-485a-8cc4-40b213e7ae26')
+          process.exit(1);"
+      - name: Deploy production Worker
+        run: npx wrangler deploy --config dist/server/wrangler.json
