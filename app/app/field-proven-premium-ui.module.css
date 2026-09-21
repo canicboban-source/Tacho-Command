@@ -263,6 +263,25 @@
 .cardReadPanel p { margin: 9px 0 0; color: #8297a2; }
 .cardReadPanel small { display: block; margin-top: 8px; color: #6b818c; }
 
+.cardTransferProgress { margin-top: 15px; }
+.cardTransferProgress > div:first-child {
+  display: flex; justify-content: space-between; gap: 14px; color: #9bb2bd;
+  font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.cardTransferTrack {
+  position: relative; overflow: hidden; height: 8px; margin-top: 9px; border-radius: 999px;
+  background: rgba(48, 91, 111, 0.46);
+}
+.cardTransferTrack > span {
+  position: absolute; inset-block: 0; width: 38%; border-radius: inherit;
+  background: linear-gradient(90deg, #2fb7d8, #65e6b0);
+  animation: cardTransferSweep 1.25s ease-in-out infinite;
+}
+@keyframes cardTransferSweep {
+  from { left: -38%; }
+  to { left: 100%; }
+}
+
 .versionLine { display: block; color: #607b89; font-size: 10px; line-height: 1.45; text-align: center; }
 
 .languagePanel { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; border-radius: 22px; }

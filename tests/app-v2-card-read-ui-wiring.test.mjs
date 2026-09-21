@@ -40,4 +40,6 @@ test("App V2 keeps card transport details out of UI source", async () => {
 
   assert.match(source, /formatTachoCommandVersionLine/);
   assert.match(source, /onReadCard: runCardRead/);
+  assert.match(source, /onProgress: \(progress: CardReadProgress\) => setCardReadProgress\(progress\)/);
+  assert.match(source, /cardReadProgress,/);
 });

@@ -35,6 +35,14 @@ test("V3 exposes one contextual primary action and automatic diagnostics stay ou
   assert.equal(client.includes("Šifra pokušaja:"), false);
 });
 
+test("card read shows truthful live transfer counters without a fabricated total", () => {
+  assert.ok(client.includes("Paketi: {controls.cardReadProgress.submessages}"));
+  assert.ok(client.includes("controls.cardReadProgress.byteLength / 1000"));
+  assert.ok(client.includes('aria-live="polite"'));
+  assert.ok(css.includes(".cardTransferTrack"));
+  assert.equal(client.includes("/ 269"), false);
+});
+
 test("reconstruction stays data-driven and contains no personal field fixture", () => {
   for (const forbidden of ["Boban Canic", "DTCO-W-5065LO", "6002", "17 h 25 min", "50 h 55 min"]) {
     assert.equal(client.includes(forbidden), false, forbidden + " must not be hard-coded");

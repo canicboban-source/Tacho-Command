@@ -11,6 +11,11 @@ type ProductControls = Readonly<{
   restoreState: "checking" | "restored" | "empty" | "invalid";
   restoredLabel: string | null;
   errorText: string | null;
+  cardReadProgress: Readonly<{
+    submessages: number;
+    byteLength: number;
+    complete: boolean;
+  }> | null;
   versionLine: string;
   onConnect: () => void;
   onReadCard: () => void;
@@ -133,6 +138,17 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
             {controls.phase === "idle" && "Poveži tahograf za LIVE podatke"}
           </strong>
           {controls.errorText ? <small>{controls.errorText}</small> : null}
+          {controls.phase === "card-reading" && controls.cardReadProgress ? (
+            <div className={styles.cardTransferProgress} aria-live="polite">
+              <div>
+                <span>Paketi: {controls.cardReadProgress.submessages}</span>
+                <span>Preuzeto: {(controls.cardReadProgress.byteLength / 1000).toLocaleString("sr-RS", { maximumFractionDigits: 1 })} KB</span>
+              </div>
+              <div className={styles.cardTransferTrack} aria-label="Očitavanje kartice je u toku">
+                <span />
+              </div>
+            </div>
+          ) : null}
         </div>
         <button
           type="button"

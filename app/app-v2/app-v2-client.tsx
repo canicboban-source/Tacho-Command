@@ -17,6 +17,11 @@ import styles from "./app-v2.module.css";
 
 type RestoreState = "checking" | "restored" | "empty" | "invalid";
 type LiveRunState = "idle" | "running" | "success" | "error";
+type CardReadProgress = Readonly<{
+  submessages: number;
+  byteLength: number;
+  complete: boolean;
+}>;
 
 function formatRestoreTime(value: string | null) {
   if (!value) return null;
@@ -38,6 +43,7 @@ export default function AppV2Client() {
   const [liveSession, setLiveSession] = useState(() => createAppV2LiveSession());
   const [lastLiveSnapshot, setLastLiveSnapshot] = useState<Readonly<Record<string, unknown>> | null>(null);
   const [cardSession, setCardSession] = useState(() => createAppV2CardSession());
+  const [cardReadProgress, setCardReadProgress] = useState<CardReadProgress | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -133,11 +139,13 @@ export default function AppV2Client() {
 
     const readingSession = beginAppV2CardRead(cardSession);
     setCardSession(readingSession);
+    setCardReadProgress(Object.freeze({ submessages: 0, byteLength: 0, complete: false }));
 
     const result = await runBrowserAppV2GoldenCardRead({
       session: readingSession,
       storage: window.localStorage,
       capturedAtIso: new Date().toISOString(),
+      onProgress: (progress: CardReadProgress) => setCardReadProgress(progress),
     });
 
     if (result.session) setCardSession(result.session);
@@ -147,6 +155,7 @@ export default function AppV2Client() {
       setCapturedAtIso(result.session.capturedAtIso);
       setRestoreState("restored");
     }
+    setCardReadProgress(null);
   };
 
   return (
@@ -167,6 +176,7 @@ export default function AppV2Client() {
             restoreState,
             restoredLabel,
             errorText: cardSession.errorText ?? liveSession.errorText ?? null,
+            cardReadProgress,
             versionLine: formatTachoCommandVersionLine(),
             onConnect: runLiveRead,
             onReadCard: runCardRead,
