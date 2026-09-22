@@ -73,3 +73,5 @@ jobs:
           process.exit(1);"
       - name: Deploy preview Worker
         run: npx wrangler deploy --config dist/server/wrangler.json
+
+# Final isolated v8 deploy after retiring superseded preview workflows.
