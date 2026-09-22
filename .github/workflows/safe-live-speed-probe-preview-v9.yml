@@ -1,18 +1,18 @@
-name: Calendar periods and LIVE activity preview v8
+name: Safe LIVE-to-card handoff preview v9
 
 on:
   push:
     branches:
       - fix/safe-live-speed-gate-20260921
     paths:
-      - .github/workflows/safe-live-speed-probe-preview-v8.yml
+      - .github/workflows/safe-live-speed-probe-preview-v9.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: tachocommand-calendar-live-activity-preview-v8
+  group: tachocommand-live-card-handoff-preview-v9
   cancel-in-progress: true
 
 jobs:
@@ -34,6 +34,7 @@ jobs:
           gzip -dc incomplete-live-retention.patch.gz | git apply
           gzip -dc live-before-telemetry.patch.gz | git apply
           gzip -dc calendar-live-activity.patch.gz | git apply
+          gzip -dc live-card-handoff.patch.gz | git apply
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -51,6 +52,7 @@ jobs:
           tests/app-v2-technical-telemetry-bridge.test.mjs
           tests/app-v2-field-session.test.mjs
           tests/app-v2-card-read-ui-wiring.test.mjs
+          tests/app-v2-golden-card-browser-transport.test.mjs
           tests/app-v2-field-transport.test.mjs
       - name: Build verified artifact
         run: npm run build
