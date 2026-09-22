@@ -1,6 +1,11 @@
 name: Safe LIVE immediate handoff preview v7
 
 on:
+  push:
+    branches:
+      - fix/safe-live-speed-gate-20260921
+    paths:
+      - .github/workflows/safe-live-speed-probe-preview-v7.yml
   workflow_dispatch:
 
 permissions:
