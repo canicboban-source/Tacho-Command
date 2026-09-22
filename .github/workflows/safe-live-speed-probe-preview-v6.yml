@@ -1,0 +1,65 @@
+name: Safe LIVE incomplete-read preview v6
+
+on:
+  push:
+    branches:
+      - fix/safe-live-speed-gate-20260921
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tachocommand-safe-live-incomplete-preview-v6
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy incomplete-read tolerant LIVE preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check out isolated branch
+        uses: actions/checkout@v4
+      - name: Apply reviewed patch stack
+        run: |
+          gzip -dc f902-probe.patch.gz | git apply
+          gzip -dc safe-persistent-live.patch.gz | git apply
+          gzip -dc retained-live-status.patch.gz | git apply
+          gzip -dc incomplete-live-retention.patch.gz | git apply
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Test incomplete-read retention contract
+        run: >-
+          node --test tests/app-v2-field-session.test.mjs
+          tests/app-v2-card-read-ui-wiring.test.mjs
+          tests/app-v2-field-transport.test.mjs
+      - name: Build verified artifact
+        run: npm run build
+      - name: Isolate preview from production resources
+        run: >-
+          node -e "const fs=require('node:fs');
+          const p='dist/server/wrangler.json';
+          const c=JSON.parse(fs.readFileSync(p,'utf8'));
+          c.name='tachocommand-app-v3-preview';
+          c.d1_databases=[];
+          c.r2_buckets=[];
+          c.kv_namespaces=[];
+          delete c.images;
+          c.observability={enabled:false};
+          fs.writeFileSync(p,JSON.stringify(c));"
+      - name: Verify isolated target
+        run: >-
+          node -e "const c=require('./dist/server/wrangler.json');
+          if(c.name!=='tachocommand-app-v3-preview'||c.d1_databases.length!==0||c.images)
+          process.exit(1);"
+      - name: Deploy preview Worker
+        run: npx wrangler deploy --config dist/server/wrangler.json
