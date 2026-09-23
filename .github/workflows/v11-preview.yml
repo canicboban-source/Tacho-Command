@@ -2,7 +2,7 @@ name: TachoCommand V11 isolated preview
 on:
   push:
     branches:
-      - fix/app-v11-preview-live-card-handoff-20260923
+      - fix/app-v11-retain-ble-card-handoff-20260923
     paths:
       - .github/workflows/v11-preview.yml
       - scripts/v10-preview-handoff.mjs
