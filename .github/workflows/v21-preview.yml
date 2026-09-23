@@ -79,11 +79,16 @@ jobs:
           node --input-type=module <<'NODE'
           const origin="https://tachocommand-app-v21-preview.canicboban.workers.dev";
           const read=async(path)=>{
-            const response=await fetch(origin+path,{redirect:"follow",cache:"no-store"});
-            if(!response.ok || new URL(response.url).origin!==origin){
-              throw new Error(path+" missing or redirected outside preview: "+response.status+" "+response.url);
+            for(let attempt=0;attempt<15;attempt++){
+              const response=await fetch(origin+path,{redirect:"follow",cache:"no-store"});
+              if(response.ok && new URL(response.url).origin===origin)return response;
+              if(response.status!==404 && response.status!==503){
+                throw new Error(path+" failed: "+response.status+" "+response.url);
+              }
+              if(attempt===14)throw new Error(path+" remains unavailable after propagation: "+response.status+" "+response.url);
+              await new Promise(resolve=>setTimeout(resolve,4000));
             }
-            return response;
+            throw new Error(path+" unreachable");
           };
           const root=await (await read("/")).text();
           if(!root.includes("Instaliraj V21 test aplikaciju")){
