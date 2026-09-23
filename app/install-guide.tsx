@@ -14,6 +14,7 @@ const copy = {
   sr: {
     button: "Instaliraj TachoCommand",
     installed: "TachoCommand je instaliran",
+    installedHint: "Ova stranica se već prikazuje kao instalirana aplikacija ili je Chrome prijavio da je instalacija uspela. Ponovna instalacija iz već instalirane aplikacije nije moguća. Otvori TachoCommand ikonu na početnom ekranu. Za novu probnu instalaciju otvori preview URL u običnom Chrome tabu; postojeću aplikaciju ne moraš da brišeš radi ažuriranja.",
     kicker: "ANDROID • CHROME",
     title: "Dodaj TachoCommand na početni ekran.",
     intro: "Posle instalacije dobijaš TachoCommand ikonu i standalone prikaz bez browser trake.",
@@ -31,6 +32,7 @@ const copy = {
   en: {
     button: "Install TachoCommand",
     installed: "TachoCommand is installed",
+    installedHint: "This page is already running as an installed app, or Chrome reported that installation completed. You cannot reinstall from inside the installed app. Open the TachoCommand icon on your home screen. To start a new test install, open the preview URL in a regular Chrome tab; you do not need to delete the existing app just to update it.",
     kicker: "ANDROID • CHROME",
     title: "Add TachoCommand to your Home screen.",
     intro: "After installation you get a TachoCommand icon and a standalone view without the browser bar.",
@@ -48,6 +50,7 @@ const copy = {
   de: {
     button: "TachoCommand installieren",
     installed: "TachoCommand ist installiert",
+    installedHint: "Diese Seite läuft bereits als installierte App oder Chrome hat die Installation bestätigt. Eine erneute Installation aus der App ist nicht möglich. Öffne TachoCommand über das Symbol auf dem Startbildschirm. Für eine neue Testinstallation öffne die Vorschau in einem normalen Chrome-Tab; für Updates muss die bestehende App nicht gelöscht werden.",
     kicker: "ANDROID • CHROME",
     title: "TachoCommand zum Startbildschirm hinzufügen.",
     intro: "Nach der Installation erhältst du ein TachoCommand-Symbol und eine eigenständige Ansicht ohne Browserleiste.",
@@ -102,7 +105,8 @@ export default function InstallGuide() {
 
     const onLandingInstall = () => {
       setInstallError(null);
-      if (installPrompt) void installNow(); // Direct native prompt from the user click.
+      if (installed) setOpen(true); // The preview is already installed: explain why reinstallation does nothing.
+      else if (installPrompt) void installNow(); // Direct native prompt from the user click.
       else setOpen(true); // Unsupported browser: show actionable Chrome menu steps.
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
@@ -117,7 +121,7 @@ export default function InstallGuide() {
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("tachocommand-open-install-guide", onLandingInstall);
     };
-  }, [installPrompt]);
+  }, [installPrompt, installed]);
 
   const installNow = async () => {
     if (!installPrompt) {
@@ -139,14 +143,14 @@ export default function InstallGuide() {
     }
   };
 
-  if (installed) {
-    return <div className={styles.installed} aria-live="polite">✓ {t.installed}</div>;
-  }
-
   return (
     <>
-      <button className={styles.fab} type="button" onClick={() => installPrompt ? void installNow() : setOpen(true)}>
-        <span>＋</span>{t.button}
+      <button
+        className={installed ? styles.installed : styles.fab}
+        type="button"
+        onClick={() => installed ? setOpen(true) : installPrompt ? void installNow() : setOpen(true)}
+      >
+        {installed ? "✓ " + t.installed : <><span>＋</span>{t.button}</>}
       </button>
       {open && (
         <div className={styles.backdrop} role="presentation" onClick={() => setOpen(false)}>
@@ -164,7 +168,7 @@ export default function InstallGuide() {
               ))}
             </div>
             {installError ? <p role="status" className={styles.hint}>{installError}</p> : null}
-            {installPrompt ? (
+            {installed ? <p role="status" className={styles.hint}>{t.installedHint}</p> : installPrompt ? (
               <div className={styles.directBox}>
                 <p>{t.directHint}</p>
                 <button type="button" onClick={() => void installNow()}>{t.direct}</button>
