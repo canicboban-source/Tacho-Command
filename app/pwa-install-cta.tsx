@@ -2,8 +2,8 @@
 
 /**
  * One installation flow for the entire page: the existing InstallGuide
- * owns beforeinstallprompt and its one-use browser event. A second listener
- * would offer the same consumed event to two different "install" buttons.
+ * owns the browser's one-use installation event. The landing button opens
+ * its instructions instead of trying to invoke another browser prompt.
  */
 export default function PwaInstallCta({ label }: Readonly<{
   label: string;
