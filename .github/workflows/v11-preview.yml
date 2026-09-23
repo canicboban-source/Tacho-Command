@@ -36,7 +36,8 @@ jobs:
         run: |
           set -eu
           sha256sum lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js > /tmp/v11-golden-baseline.sha256
-          node scripts/v11-preview-handoff.mjs
+          node scripts/v10-preview-handoff.mjs
+          node scripts/v11-retained-gatt-handoff.mjs
           git diff --name-only
           sha256sum -c /tmp/v11-golden-baseline.sha256
       - uses: actions/setup-node@v4
@@ -47,7 +48,7 @@ jobs:
         run: npm ci
       - name: Verify v11 handoff and existing field regression tests
         run: |
-          node --test tests/v11-preview-handoff.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/tacho-rhmi.test.mjs
+          node --test tests/v10-preview-handoff.test.mjs tests/v11-retained-gatt-handoff.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/tacho-rhmi.test.mjs
       - name: Build isolated artifact
         run: npm run build
       - name: Restrict deployment to the preview Worker with no production bindings
