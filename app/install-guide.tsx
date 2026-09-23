@@ -100,7 +100,11 @@ export default function InstallGuide() {
       setOpen(false);
     };
 
-    const onLandingInstall = () => { setInstallError(null); setOpen(true); };
+    const onLandingInstall = () => {
+      setInstallError(null);
+      if (installPrompt) void installNow(); // Direct native prompt from the user click.
+      else setOpen(true); // Unsupported browser: show actionable Chrome menu steps.
+    };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
     window.addEventListener("tachocommand-open-install-guide", onLandingInstall);
@@ -113,7 +117,7 @@ export default function InstallGuide() {
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("tachocommand-open-install-guide", onLandingInstall);
     };
-  }, []);
+  }, [installPrompt]);
 
   const installNow = async () => {
     if (!installPrompt) {
