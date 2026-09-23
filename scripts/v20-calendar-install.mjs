@@ -12,4 +12,25 @@ for(const path of ["tests/v17-production-clock.test.mjs","tests/v19-install-prov
   if(!content.includes("PREVIEW V19"))throw Error("Old preview marker absent: "+path);
   writeFileSync(path,content.replace(/PREVIEW V19/g,"PREVIEW V20"));
 }
+
+const manifestPath = "public/manifest.webmanifest";
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+if (manifest.short_name !== "TC V19 Test") throw Error("V20 requires isolated V19 preview manifest");
+manifest.name = "TachoCommand V20 — Preview (test)";
+manifest.short_name = "TC V20 Test";
+manifest.description = "Izolovana probna verzija TachoCommand V20 — test. Ne zamenjuje produkciju.";
+manifest.id = "/app?v20-preview";
+manifest.start_url = "/app?v20-preview";
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\\n".replace("\\\\n","\\n"));
+const landingPath = "app/landing-page.tsx";
+let landing = readFileSync(landingPath, "utf8");
+for (const [oldLabel, newLabel] of [
+  ["Instaliraj V19 test aplikaciju", "Instaliraj V20 test aplikaciju"],
+  ["Install V19 test app", "Install V20 test app"],
+  ["V19-Test-App installieren", "V20-Test-App installieren"],
+]) {
+  if (landing.split(oldLabel).length !== 2) throw Error("V20 landing install label missing: " + oldLabel);
+  landing = landing.replace(oldLabel, newLabel);
+}
+writeFileSync(landingPath, landing);
 console.log("V20 calendar fortnight and newest-first history applied; Golden protocol unchanged.");
