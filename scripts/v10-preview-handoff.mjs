@@ -70,4 +70,10 @@ test("v10 keeps the verified card implementation out of the source changes", () 
   assert.match(source, /runBrowserAppV2GoldenCardRead\\(/);
 });
 `);
+const existingTestPath = "tests/app-v2-card-read-ui-wiring.test.mjs";
+const existingTest = readFileSync(existingTestPath, "utf8");
+const previousAssertion = 'assert.match(source, /if \\(cardSession\\.busy \\|\\| liveRunState === "running"\\) return/);';
+const updatedAssertion = 'assert.match(source, /if \\(cardSession\\.busy \\|\\| cardHandoffRef\\.current \\|\\| liveRunState === "running"\\) return/);';
+if (existingTest.split(previousAssertion).length !== 2) throw new Error("V10 test anchor missing");
+writeFileSync(existingTestPath, existingTest.replace(previousAssertion, updatedAssertion));
 console.log("V10 source handoff patch and regression test applied");
