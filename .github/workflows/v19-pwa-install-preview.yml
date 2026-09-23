@@ -67,3 +67,33 @@ jobs:
           NODE
       - name: Deploy new V19 isolated Worker only
         run: npx wrangler deploy --config dist/server/wrangler.json
+
+      - name: Verify V19 installation assets exist on deployed preview origin
+        run: |
+          node --input-type=module <<'NODE'
+          const origin="https://tachocommand-app-v19-preview.canicboban.workers.dev";
+          const read=async(path)=>{
+            const response=await fetch(origin+path,{redirect:"follow",cache:"no-store"});
+            if(!response.ok || new URL(response.url).origin!==origin){
+              throw new Error(path+" missing or redirected outside preview: "+response.status+" "+response.url);
+            }
+            return response;
+          };
+          const root=await (await read("/")).text();
+          if(!root.includes("Instaliraj V19 test aplikaciju")){
+            throw new Error("V19 landing installation action is not rendered");
+          }
+          const manifestResponse=await read("/manifest.webmanifest");
+          const manifest=await manifestResponse.json();
+          if(manifest.short_name!=="TC V19 Test"||manifest.start_url!=="/app?v19-preview"||manifest.display!=="standalone"){
+            throw new Error("Wrong preview manifest identity: "+JSON.stringify(manifest));
+          }
+          for(const path of ["/app?v19-preview","/sw.js","/icon-192.png","/icon-512.png"]){
+            const response=await read(path);
+            if(path.endsWith(".png") && !(response.headers.get("content-type")??"").includes("image/png")){
+              throw new Error("PWA icon has wrong MIME type: "+path);
+            }
+            console.log("PWA_ASSET_OK",path,response.status);
+          }
+          console.log("V19_PWA_READY",JSON.stringify({origin,manifest:manifest.short_name,button:true}));
+          NODE
