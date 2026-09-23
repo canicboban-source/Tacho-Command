@@ -1,0 +1,36 @@
+name: Inspect v9 source for v10 handoff
+on:
+  push:
+    branches:
+      - fix/app-v10-preview-live-card-handoff-20260923
+    paths:
+      - .github/workflows/v10-inspect.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize the exact v9 patch stack without deploying
+        run: |
+          set -eu
+          gzip -dc f902-probe.patch.gz | git apply
+          gzip -dc safe-persistent-live.patch.gz | git apply
+          gzip -dc retained-live-status.patch.gz | git apply
+          gzip -dc incomplete-live-retention.patch.gz | git apply
+          gzip -dc live-before-telemetry.patch.gz | git apply
+          gzip -dc calendar-live-activity.patch.gz | git apply
+          gzip -dc live-card-handoff.patch.gz | git apply
+          echo '=== PATCHED FILES ==='
+          git diff --name-only
+          echo '=== CLIENT ==='
+          nl -ba app/app-v2/app-v2-client.tsx | sed -n '1,400p'
+          echo '=== FIELD TRANSPORT ==='
+          nl -ba lib/app-v2-field-transport.js | sed -n '1,300p'
+          echo '=== CARD BRIDGE ==='
+          nl -ba lib/app-v2-card-transport-controller-bridge.js | sed -n '1,140p'
+          echo '=== GOLDEN WRAPPER FIRST/LAST ONLY ==='
+          grep -nE 'device|disconnectOnFinish|gatt.connect|gatt.disconnect' lib/app-v2-golden-card-browser-transport.js
