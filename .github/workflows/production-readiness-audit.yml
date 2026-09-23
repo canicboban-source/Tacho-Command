@@ -64,3 +64,39 @@ jobs:
             console.log("REPO_MAIN_CLIENT",JSON.stringify({sha256_prefix:sha(mainClient),markers:markers.filter(m=>mainClient.includes(m)),hasDirectCardChooser:mainClient.includes("runBrowserAppV2GoldenCardRead"),hasPrivacyGate:mainClient.includes("PRIVATNOST PRE POVEZIVANJA")}));
           }finally {clearTimeout(timeout);}
           NODE
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Rebuild checked-out main and compare compiled app client with deployed production bundle
+        run: |
+          npm ci
+          npm run build
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import { createHash } from "node:crypto";
+          const hash=s=>createHash("sha256").update(s).digest("hex");
+          function* walk(dir){
+            if(!fs.existsSync(dir))return;
+            for(const item of fs.readdirSync(dir,{withFileTypes:true})){
+              const path=dir+"/"+item.name;
+              if(item.isDirectory())yield* walk(path);
+              else if(/app-v2-client-[^/]+\\.js$/.test(path))yield path;
+            }
+          }
+          const response=await fetch("https://tachocommand.com/assets/app-v2-client-Dz6iDoyT.js");
+          if(!response.ok)throw Error("production client fetch HTTP "+response.status);
+          const live=await response.text();
+          const files=[...walk("dist")];
+          console.log("LIVE_CLIENT",JSON.stringify({length:live.length,sha256:hash(live)}));
+          for(const path of files){
+            const built=fs.readFileSync(path,"utf8");
+            console.log("MAIN_BUILD_CLIENT",JSON.stringify({
+              path,length:built.length,sha256:hash(built),matchesProduction:built===live,
+              mainDirectChooser:built.includes("Novo očitavanje kartice nije završeno."),
+              productionDirectChooser:live.includes("Novo očitavanje kartice nije završeno."),
+            }));
+          }
+          if(!files.length)throw Error("No built client asset found: check dist/client output path");
+          NODE
