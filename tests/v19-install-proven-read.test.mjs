@@ -6,7 +6,7 @@ test("V21 retains the original GOLDEN card-reader entry point", () => {
   const client = readFileSync("app/app-v2/app-v2-client.tsx", "utf8");
   const bridge = readFileSync("lib/app-v2-card-transport-controller-bridge.js", "utf8");
   assert.match(client, /runBrowserAppV2GoldenCardRead\(\{/);
-  assert.match(client, /PREVIEW V21/);
+  assert.match(client, /PREVIEW V19/);
   assert.doesNotMatch(client, /onDeviceSelected|awaitingCardRecognition|createDeferredCardDeviceChooser|keepGattConnected/);
   assert.match(bridge, /readBrowserAppV2GoldenCardPayload\(\{/);
 });
