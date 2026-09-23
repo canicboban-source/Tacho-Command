@@ -21,6 +21,12 @@ test("V20 landing install CTA opens the sole Chrome prompt owner",()=>{
  assert.match(guide,/catch \(error\)/);
  assert.match(guide,/Otvori u Chrome-u/);
  assert.match(guide,/tachocommand-open-install-guide/);
+ assert.match(guide,/if \(installed\) setOpen\(true\)/);
+ assert.match(guide,/installed \? t\.installedHint/);
+ assert.match(guide,/installed \? t\.installed : t\.title/);
+ assert.doesNotMatch(guide,/if \(installed\)\s*\{\s*return <div/);
+ assert.match(source,/display-mode: standalone/);
+ assert.match(source,/installed \? installedLabel/);
  assert.match(landing,/<PwaInstallCta /);
  assert.match(landing,/Instaliraj V20 test aplikaciju/);
 });
