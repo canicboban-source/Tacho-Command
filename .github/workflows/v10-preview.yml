@@ -5,6 +5,7 @@ on:
       - fix/app-v10-preview-live-card-handoff-20260923
     paths:
       - .github/workflows/v10-preview.yml
+      - scripts/v10-preview-handoff.mjs
   workflow_dispatch:
 permissions:
   contents: read
