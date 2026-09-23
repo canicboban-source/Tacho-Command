@@ -41,6 +41,9 @@ jobs:
               sha256_prefix:sha(html), markers:markers.filter((m)=>html.includes(m)),
               script_count:(html.match(/<script\b/gi)??[]).length,
             }));
+            console.log("PROD_HTML_HEAD", JSON.stringify(html.slice(0, 4900)));
+            console.log("PROD_SCRIPT_TAGS",JSON.stringify([...html.matchAll(/<script[^>]*>/gi)].map(m=>m[0].slice(0,220))));
+            console.log("PROD_ASSET_REFERENCES",JSON.stringify([...new Set([...html.matchAll(/(?:["\x27])(\/[^"\x27\\s]*(?:\\.js|\\.mjs)[^"\x27\\s]*)/gi)].map(m=>m[1]))].slice(0,35)));
             const scripts = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((m)=>m[1]);
             const modulePreloads=[...html.matchAll(/<link[^>]+(?:rel=["']modulepreload["'][^>]*href|href=["']([^"']+)["'][^>]*rel=["']modulepreload["'])/gi)].map((m)=>m[1]).filter(Boolean);
             const urls=[...new Set([...scripts,...modulePreloads])].slice(0,60);
