@@ -21,7 +21,7 @@ manifest.short_name = "TC V20 Test";
 manifest.description = "Izolovana probna verzija TachoCommand V20 — test. Ne zamenjuje produkciju.";
 manifest.id = "/app?v20-preview";
 manifest.start_url = "/app?v20-preview";
-writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\\n".replace("\\\\n","\\n"));
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 const landingPath = "app/landing-page.tsx";
 let landing = readFileSync(landingPath, "utf8");
 for (const [oldLabel, newLabel] of [
