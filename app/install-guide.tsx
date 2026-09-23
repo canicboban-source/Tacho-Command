@@ -157,16 +157,18 @@ export default function InstallGuide() {
           <section className={styles.sheet} role="dialog" aria-modal="true" aria-labelledby="tc-install-title" onClick={(event) => event.stopPropagation()}>
             <div className={styles.handle} />
             <span className={styles.kicker}>{t.kicker}</span>
-            <h2 id="tc-install-title">{t.title}</h2>
-            <p className={styles.intro}>{t.intro}</p>
-            <div className={styles.steps}>
-              {t.steps.map(([number, title, body]) => (
-                <article key={number}>
-                  <span>{number}</span>
-                  <div><h3>{title}</h3><p>{body}</p></div>
-                </article>
-              ))}
-            </div>
+            <h2 id="tc-install-title">{installed ? t.installed : t.title}</h2>
+            {!installed ? <>
+              <p className={styles.intro}>{t.intro}</p>
+              <div className={styles.steps}>
+                {t.steps.map(([number, title, body]) => (
+                  <article key={number}>
+                    <span>{number}</span>
+                    <div><h3>{title}</h3><p>{body}</p></div>
+                  </article>
+                ))}
+              </div>
+            </> : null}
             {installError ? <p role="status" className={styles.hint}>{installError}</p> : null}
             {installed ? <p role="status" className={styles.hint}>{t.installedHint}</p> : installPrompt ? (
               <div className={styles.directBox}>
