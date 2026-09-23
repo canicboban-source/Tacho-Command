@@ -22,7 +22,7 @@ test("V20 landing install CTA opens the sole Chrome prompt owner",()=>{
  assert.match(guide,/Otvori u Chrome-u/);
  assert.match(guide,/tachocommand-open-install-guide/);
  assert.match(guide,/if \(installed\) setOpen\(true\)/);
- assert.match(guide,/installed \? t\.installedHint/);
+ assert.match(guide,/installed \? <p role="status"[^\n]*t\.installedHint/);
  assert.match(guide,/installed \? t\.installed : t\.title/);
  assert.doesNotMatch(guide,/if \(installed\)\s*\{\s*return <div/);
  assert.match(source,/display-mode: standalone/);
