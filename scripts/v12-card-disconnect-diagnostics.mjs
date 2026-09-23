@@ -7,4 +7,10 @@ for (const {path,before,after} of edits) {
   writeFileSync(path,source.replace(before,after));
 }
 writeFileSync("tests/v12-card-diagnostics.test.mjs", "import assert from \"node:assert/strict\";\nimport test from \"node:test\";\nimport { readFileSync } from \"node:fs\";\ntest(\"V12 reports browser BLE disconnect and packet stall while reading\", () => {\n  const client = readFileSync(\"app/app-v2/app-v2-client.tsx\", \"utf8\");\n  assert.match(client, /gattserverdisconnected/);\n  assert.match(client, /lastCardProgressRef\\.current\\?\\.complete/);\n  assert.match(client, /onTransportError: \\(error: unknown\\)/);\n  assert.match(client, /Nema novih paketa 90 s/);\n  assert.match(client, /cardDiagnostic,/);\n  assert.match(client, /PREVIEW V12/);\n});\ntest(\"V12 keeps golden code untouched and surfaces actual transport failure on card panel\", () => {\n  const bridge = readFileSync(\"lib/app-v2-card-transport-controller-bridge.js\", \"utf8\");\n  assert.match(bridge, /onTransportError\\?\\.\\(error\\)/);\n  assert.match(bridge, /throw error/);\n  const ui = readFileSync(\"app/app/field-proven-premium-ui.tsx\", \"utf8\");\n  assert.match(ui, /role=\"status\">\\{controls\\.cardDiagnostic\\}/);\n});\n");
+const wiringPath="tests/app-v2-card-read-ui-wiring.test.mjs";
+const wiringSource=readFileSync(wiringPath,"utf8");
+const oldAssertion=String.raw`assert.match(source, /onProgress: \(progress: CardReadProgress\) => setCardReadProgress\(progress\)/);`;
+const newAssertion=String.raw`assert.match(source, /onProgress: \(progress: CardReadProgress\) => \{/);`;
+if (wiringSource.split(oldAssertion).length !== 2) throw new Error("V12 progress test assertion anchor missing");
+writeFileSync(wiringPath,wiringSource.replace(oldAssertion,newAssertion));
 console.log("V12 passive read-disconnect diagnostics installed.");
