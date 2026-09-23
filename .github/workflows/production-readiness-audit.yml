@@ -1,0 +1,63 @@
+name: Read-only production app provenance audit
+on:
+  push:
+    branches:
+      - investigate/production-readiness-provenance-20260923
+    paths:
+      - .github/workflows/production-readiness-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect public production app shell and client fingerprints without deploying
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHash } from "node:crypto";
+          import { readFileSync } from "node:fs";
+          const base = "https://tachocommand.com";
+          const sha = (s) => createHash("sha256").update(s).digest("hex").slice(0, 20);
+          const markers = [
+            "PRIVATNOST PRE POVEZIVANJA",
+            "Stabilniji sa svakim povezivanjem.",
+            "Golden-0.32c",
+            "runBrowserAppV2GoldenCardRead",
+            "Čeka očitavanje",
+            "card-recognition",
+            "Očitavanje kartice je u toku",
+            "Kartica još nije očitana",
+          ];
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 25_000);
+          try {
+            const response = await fetch(base + "/app", {signal: controller.signal, redirect:"follow"});
+            const html = await response.text();
+            console.log("PROD_HTML", JSON.stringify({
+              final_url:response.url,status:response.status,bytes:html.length,
+              sha256_prefix:sha(html), markers:markers.filter((m)=>html.includes(m)),
+              script_count:(html.match(/<script\\b/gi)??[]).length,
+            }));
+            const scripts = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((m)=>m[1]);
+            const modulePreloads=[...html.matchAll(/<link[^>]+(?:rel=["']modulepreload["'][^>]*href|href=["']([^"']+)["'][^>]*rel=["']modulepreload["'])/gi)].map((m)=>m[1]).filter(Boolean);
+            const urls=[...new Set([...scripts,...modulePreloads])].slice(0,60);
+            console.log("PROD_CHUNKS",JSON.stringify(urls));
+            let examined=0;let total=0;
+            for(const path of urls){
+              const url=new URL(path,response.url);
+              if(url.origin!==base || !/\\.(js|mjs)(?:\\?|$)/i.test(url.pathname+url.search))continue;
+              const r=await fetch(url,{signal:controller.signal});
+              if(!r.ok){console.log("CHUNK_ERROR",JSON.stringify({path,status:r.status}));continue;}
+              const js=await r.text();
+              examined++;total+=js.length;
+              console.log("CHUNK",JSON.stringify({path:url.pathname,length:js.length,sha256_prefix:sha(js),markers:markers.filter(m=>js.includes(m))}));
+              if(total>18_000_000){console.log("SCAN_CAP_REACHED",total);break;}
+            }
+            console.log("SCAN_DONE",JSON.stringify({examined,total}));
+            const mainClient=readFileSync("app/app-v2/app-v2-client.tsx","utf8");
+            console.log("REPO_MAIN_CLIENT",JSON.stringify({sha256_prefix:sha(mainClient),markers:markers.filter(m=>mainClient.includes(m)),hasDirectCardChooser:mainClient.includes("runBrowserAppV2GoldenCardRead"),hasPrivacyGate:mainClient.includes("PRIVATNOST PRE POVEZIVANJA")}));
+          }finally {clearTimeout(timeout);}
+          NODE
