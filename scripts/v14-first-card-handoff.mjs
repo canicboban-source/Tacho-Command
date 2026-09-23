@@ -6,4 +6,10 @@ for(const {path,before,after} of edits){
   if(count!==1)throw new Error("V14 patch anchor "+path+" count="+count+" anchor="+before.slice(0,100));
   writeFileSync(path,content.replace(before,after));
 }
+const v11TestPath="tests/v11-retained-gatt-handoff.test.mjs";
+const v11Test=readFileSync(v11TestPath,"utf8");
+const oldAssertion=String.raw`assert.match(transport, /if \(device\.gatt\.connected === false\)/);`;
+const nextAssertion=String.raw`assert.match(transport, /if \(device\.gatt\.connected !== false\)/);`;
+if(v11Test.split(oldAssertion).length!==2)throw new Error("V14 existing v11 GATT test anchor mismatch");
+writeFileSync(v11TestPath,v11Test.replace(oldAssertion,nextAssertion));
 console.log("V14 first-handoff selected-device GATT preflight and stale-error cleanup applied");
