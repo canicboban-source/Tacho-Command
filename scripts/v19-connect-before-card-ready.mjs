@@ -1,0 +1,9 @@
+import { readFileSync,writeFileSync } from "node:fs";
+const edits=[{"path":"app/app-v2/app-v2-client.tsx","before":"        // The golden reader has selected the physical device but has not\n        // connected GATT or sent ANY command. No fixed delay is assumed to\n        // establish tachograph card readiness.","after":"        // GATT is now connected before this checkpoint. The golden reader\n        // has not sent its DDP card commands yet; BLE alone cannot prove\n        // the tachograph finished recognizing the physical card."},{"path":"app/app-v2/app-v2-client.tsx","before":"versionLine: formatTachoCommandVersionLine() + \" · PREVIEW V18\",","after":"versionLine: formatTachoCommandVersionLine() + \" · PREVIEW V19\","},{"path":"app/app/field-proven-premium-ui.tsx","before":"          {controls.awaitingCardRecognition\n            ? <small>Chrome je izabrao tahograf. Sačekajte da na displeju tahografa bude završen postupak prepoznavanja kartice; tek tada pritisnite dugme ispod. Dok čekate, ne šaljemo zahtev za čitanje.</small>","after":"          {controls.awaitingCardRecognition\n            ? <small>Bluetooth veza sa izabranim tahografom je uspostavljena. Ako tahograf prikazuje prepoznavanje kartice, sačekajte da se ono završi pre nego što potvrdite. Ako prepoznavanje nije započeto ili je prekinuto, ne pritiskajte dugme. Kartični Download još nije pokrenut.</small>"},{"path":"tests/v17-production-clock.test.mjs","before":"PREVIEW V18","after":"PREVIEW V19"}];
+for(const {path,before,after} of edits) {
+ const source=readFileSync(path,"utf8");
+ const count=source.split(before).length-1;
+ if(count!==1)throw Error("V19 patch anchor "+path+" count="+count+" "+before.slice(0,100));
+ writeFileSync(path,source.replace(before,after));
+}
+console.log("V19 real GATT is connected before readiness checkpoint; no GOLDEN transport source changed.");
