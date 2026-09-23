@@ -22,7 +22,7 @@ test("V20 landing install CTA opens the sole Chrome prompt owner",()=>{
  assert.match(guide,/Otvori u Chrome-u/);
  assert.match(guide,/tachocommand-open-install-guide/);
  assert.match(landing,/<PwaInstallCta /);
- assert.match(landing,/Instaliraj V19 test aplikaciju/);
+ assert.match(landing,/Instaliraj V20 test aplikaciju/);
 });
 test("Preview PWA identity differs from live and points to the same origin app",()=>{
  const m=JSON.parse(readFileSync("public/manifest.webmanifest","utf8"));
