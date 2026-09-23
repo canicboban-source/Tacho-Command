@@ -82,13 +82,14 @@ jobs:
             for(const item of fs.readdirSync(dir,{withFileTypes:true})){
               const path=dir+"/"+item.name;
               if(item.isDirectory())yield* walk(path);
-              else if(/app-v2-client-[^/]+\\.js$/.test(path))yield path;
+              else if(/app-v2-client-[^/]+\.js$/.test(path))yield path;
             }
           }
           const response=await fetch("https://tachocommand.com/assets/app-v2-client-Dz6iDoyT.js");
           if(!response.ok)throw Error("production client fetch HTTP "+response.status);
           const live=await response.text();
           const files=[...walk("dist")];
+          console.log("BUILT_ASSET_CANDIDATES",JSON.stringify(files));
           console.log("LIVE_CLIENT",JSON.stringify({length:live.length,sha256:hash(live)}));
           for(const path of files){
             const built=fs.readFileSync(path,"utf8");
