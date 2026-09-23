@@ -58,4 +58,10 @@ test("diagnostics handoff preserves GATT, ordinary close still disconnects", () 
   assert.match(transport, /if \\(device\\.gatt\\.connected === false\\)/);
 });
 `);
+const testPath = "tests/app-v2-card-read-ui-wiring.test.mjs";
+update(
+  testPath,
+  "assert.match(source, /await transport\\\\.close\\\\(\\\\)/);",
+  "assert.match(source, /await transport\\\\.close\\\\(\\\\{ keepGattConnected: true \\\\}\\\\)/);",
+);
 console.log("V11 retained-GATT handoff patch applied without changing golden transport");
