@@ -1,0 +1,75 @@
+name: Read-only V22 PWA browser installability diagnostic
+on:
+  push:
+    branches:
+      - fix/app-v22-origin-manifest-install-20260923
+    paths:
+      - .github/workflows/v22-installability-diagnostic.yml
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prepare headless Chrome and installability inspector
+        run: |
+          set -eux
+          google-chrome --version
+          npm install --no-save --ignore-scripts playwright-core
+      - name: Inspect actual deployed V22 origin in Chrome without deploying or touching production
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from "playwright-core";
+          const origin="https://tachocommand-app-v22-preview.canicboban.workers.dev";
+          const browser=await chromium.launch({headless:true,executablePath:"/usr/bin/google-chrome",args:["--no-sandbox"]});
+          try {
+            const context=await browser.newContext({serviceWorkers:"allow"});
+            const page=await context.newPage();
+            const consoleErrors=[];
+            page.on("console",msg=>{if(msg.type()==="error")consoleErrors.push(msg.text().slice(0,500));});
+            page.on("pageerror",err=>consoleErrors.push(String(err).slice(0,500)));
+            const response=await page.goto(origin+"/",{waitUntil:"domcontentloaded",timeout:30000});
+            await page.waitForTimeout(1500);
+            const cdp=await context.newCDPSession(page);
+            const manifest=await cdp.send("Page.getAppManifest");
+            const errors=await cdp.send("Page.getInstallabilityErrors");
+            console.log("CHROME_STATUS",JSON.stringify({status:response?.status(),url:page.url(),errors:consoleErrors}));
+            console.log("CHROME_APP_MANIFEST",JSON.stringify(manifest).slice(0,12000));
+            console.log("CHROME_INSTALLABILITY_ERRORS",JSON.stringify(errors));
+            if(manifest.url!==origin+"/manifest.webmanifest"
+              || (errors.installabilityErrors??[]).some(e=>e.errorId==="no-manifest"||e.errorId==="manifest-parsing-or-network-error")){
+              throw new Error("V22 Chrome still cannot load own-origin app manifest");
+            }
+            console.log("V22_CHROME_MANIFEST_OK",manifest.url);
+            const pwa=await page.evaluate(async()=>{
+              const m=document.querySelector('link[rel="manifest"]');
+              const registration=await navigator.serviceWorker.getRegistration();
+              const manifestResponse=await fetch("/manifest.webmanifest",{cache:"no-store"});
+              const manifestData=await manifestResponse.json();
+              const icons=await Promise.all(manifestData.icons.map(async(icon)=>{
+                try{
+                  const res=await fetch(icon.src,{cache:"no-store"});
+                  const blob=await res.blob();
+                  const bitmap=await createImageBitmap(blob);
+                  return {src:icon.src,status:res.status,type:res.headers.get("content-type"),blobType:blob.type,
+                    width:bitmap.width,height:bitmap.height,size:blob.size,purpose:icon.purpose};
+                }catch(e){return {src:icon.src,error:String(e)};}
+              }));
+              return {
+                manifestHref:m?.href,manifestType:m?.type,
+                manifestHttp:manifestResponse.status,manifestMime:manifestResponse.headers.get("content-type"),
+                manifest:manifestData,icons,swController:!!navigator.serviceWorker.controller,
+                swActive:registration?.active?.state,swScope:registration?.scope,
+                swScript:registration?.active?.scriptURL,
+                standalone:matchMedia("(display-mode: standalone)").matches,
+              };
+            });
+            console.log("CHROME_PWA_INSPECT",JSON.stringify(pwa).slice(0,19000));
+            await context.close();
+          }finally{await browser.close();}
+          NODE
