@@ -49,8 +49,9 @@ for(const [before,after] of [
  ["TC V21 Test","TC V22 Test"],
  ["/app?v21-preview","/app?v22-preview"],
 ]) {
- if(install.split(before).length!==2)throw Error("V22 install assertion missing "+before);
- install=install.replace(before,after);
+ const matches=install.split(before).length-1;
+ if(matches!==(before==="/app?v21-preview"?2:1))throw Error("V22 install assertion count "+matches+": "+before);
+ install=install.replaceAll(before,after);
 }
 writeFileSync(installTests,install);
 console.log("V22 manifest HTML points to own worker origin, not tachocommand.com; no Golden changes.");
