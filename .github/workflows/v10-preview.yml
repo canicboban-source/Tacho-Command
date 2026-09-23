@@ -33,14 +33,10 @@ jobs:
       - name: Apply v10 handoff fix around the unchanged golden card transport
         run: |
           set -eu
+          sha256sum lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js > /tmp/v10-golden-baseline.sha256
           node scripts/v10-preview-handoff.mjs
           git diff --name-only
-          for file in lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js; do
-            if ! git diff --quiet HEAD -- "$file"; then
-              echo "Golden transport modified: $file" >&2
-              exit 1
-            fi
-          done
+          sha256sum -c /tmp/v10-golden-baseline.sha256
       - uses: actions/setup-node@v4
         with:
           node-version: 22
