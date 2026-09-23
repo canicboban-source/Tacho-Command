@@ -10,25 +10,25 @@ test("V19 always invokes original production Golden read without manual pre-BLE 
  assert.match(bridge,/readBrowserAppV2GoldenCardPayload\(\{/);
  assert.doesNotMatch(bridge,/onDeviceSelected|createDeferredCardDeviceChooser/);
 });
-test("Install CTA prompts only after Chrome makes installation available, otherwise explains manual steps",()=>{
+test("V20 landing install CTA opens the sole Chrome prompt owner",()=>{
  const source=readFileSync("app/pwa-install-cta.tsx","utf8");
- assert.match(source,/beforeinstallprompt/);
- assert.match(source,/appinstalled/);
- assert.match(source,/await deferred\.prompt\(\)/);
- assert.match(source,/if \(!deferred\) \{\s*setShowGuide\(true\)/);
- assert.match(source,/decision\.outcome !== "accepted"/);
- assert.match(source,/Wait for appinstalled/);
+ const guide=readFileSync("app/install-guide.tsx","utf8");
  const landing=readFileSync("app/landing-page.tsx","utf8");
+ assert.match(source,/tachocommand-open-install-guide/);
+ assert.doesNotMatch(source,/beforeinstallprompt|await deferred\.prompt/);
+ assert.match(guide,/beforeinstallprompt/);
+ assert.match(guide,/await prompt\.prompt\(\)/);
+ assert.match(guide,/catch \(error\)/);
+ assert.match(guide,/Otvori u Chrome-u/);
+ assert.match(guide,/tachocommand-open-install-guide/);
  assert.match(landing,/<PwaInstallCta /);
  assert.match(landing,/Instaliraj V19 test aplikaciju/);
- assert.match(landing,/Install V19 test app/);
- assert.match(landing,/V19-Test-App installieren/);
 });
 test("Preview PWA identity differs from live and points to the same origin app",()=>{
  const m=JSON.parse(readFileSync("public/manifest.webmanifest","utf8"));
- assert.equal(m.short_name,"TC V19 Test");
- assert.equal(m.start_url,"/app?v19-preview");
- assert.equal(m.id,"/app?v19-preview");
+ assert.equal(m.short_name,"TC V20 Test");
+ assert.equal(m.start_url,"/app?v20-preview");
+ assert.equal(m.id,"/app?v20-preview");
  assert.equal(m.scope,"/");
  assert.equal(m.display,"standalone");
  const sw=readFileSync("public/sw.js","utf8");
