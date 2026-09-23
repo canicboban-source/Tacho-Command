@@ -45,7 +45,7 @@ jobs:
             console.log("PROD_SCRIPT_TAGS",JSON.stringify([...html.matchAll(/<script[^>]*>/gi)].map(m=>m[0].slice(0,220))));
             console.log("PROD_ASSET_REFERENCES",JSON.stringify([...new Set([...html.matchAll(/(?:["\x27])(\/[^"\x27\\s]*(?:\\.js|\\.mjs)[^"\x27\\s]*)/gi)].map(m=>m[1]))].slice(0,35)));
             const scripts = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((m)=>m[1]);
-            const modulePreloads=[...html.matchAll(/<link[^>]+(?:rel=["']modulepreload["'][^>]*href|href=["']([^"']+)["'][^>]*rel=["']modulepreload["'])/gi)].map((m)=>m[1]).filter(Boolean);
+            const modulePreloads=[...html.matchAll(/<link[^>]+>/gi)].map(m=>m[0]).filter(tag=>tag.includes("modulepreload")).map(tag=>tag.match(/href=["\x27]([^"\x27]+)["\x27]/i)?.[1]).filter(Boolean);
             const urls=[...new Set([...scripts,...modulePreloads])].slice(0,60);
             console.log("PROD_CHUNKS",JSON.stringify(urls));
             let examined=0;let total=0;
