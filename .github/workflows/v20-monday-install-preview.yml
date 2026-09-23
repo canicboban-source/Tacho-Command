@@ -4,7 +4,7 @@ on:
     branches:
       - fix/app-v20-monday-install-20260923
     paths:
-      - .github/workflows/v20-pwa-install-preview.yml
+      - .github/workflows/v20-monday-install-preview.yml
       - scripts/v17-production-baseline-safety.mjs
       - scripts/v19-preview-install.mjs
       - scripts/v20-calendar-install.mjs
