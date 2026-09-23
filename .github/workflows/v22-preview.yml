@@ -52,7 +52,7 @@ jobs:
         run: npm ci
       - name: Verify production read, regression suite, phone time and safety copy
         run: |
-          node --test tests/v17-production-clock.test.mjs tests/v19-install-proven-read.test.mjs tests/v20-calendar-history.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/app-v2-card-pipeline.test.mjs tests/app-v2-parser-card-adapter.test.mjs tests/field-proven-product-state.test.mjs tests/tacho-rhmi.test.mjs
+          node --test tests/v17-production-clock.test.mjs tests/v19-install-proven-read.test.mjs tests/v20-calendar-history.test.mjs tests/v22-manifest-own-origin.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/app-v2-card-pipeline.test.mjs tests/app-v2-parser-card-adapter.test.mjs tests/field-proven-product-state.test.mjs tests/tacho-rhmi.test.mjs
       - name: Build isolated production-derived app
         run: npm run build
       - name: Never deploy to production or the previous V14-V16 Worker
@@ -94,6 +94,14 @@ jobs:
             throw new Error(path+" unreachable");
           };
           const root=await (await read("/")).text();
+          // Fail the deploy if the preview HTML still points to the production
+          // manifest. This cross-origin CORS issue was the actual V21 blocker.
+          if(!root.includes('href="https://tachocommand-app-v22-preview.canicboban.workers.dev/manifest.webmanifest"')){
+            throw new Error("Preview HTML did not advertise an own-origin manifest");
+          }
+          if(root.includes('href="https://tachocommand.com/manifest.webmanifest"')){
+            throw new Error("Production manifest leaked into preview HTML");
+          }
           if(!root.includes("Instaliraj V22 test aplikaciju")){
             throw new Error("V22 landing installation action is not rendered");
           }
