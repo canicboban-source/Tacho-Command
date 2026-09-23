@@ -39,7 +39,7 @@ jobs:
             console.log("PROD_HTML", JSON.stringify({
               final_url:response.url,status:response.status,bytes:html.length,
               sha256_prefix:sha(html), markers:markers.filter((m)=>html.includes(m)),
-              script_count:(html.match(/<script\\b/gi)??[]).length,
+              script_count:(html.match(/<script\b/gi)??[]).length,
             }));
             const scripts = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((m)=>m[1]);
             const modulePreloads=[...html.matchAll(/<link[^>]+(?:rel=["']modulepreload["'][^>]*href|href=["']([^"']+)["'][^>]*rel=["']modulepreload["'])/gi)].map((m)=>m[1]).filter(Boolean);
@@ -48,7 +48,7 @@ jobs:
             let examined=0;let total=0;
             for(const path of urls){
               const url=new URL(path,response.url);
-              if(url.origin!==base || !/\\.(js|mjs)(?:\\?|$)/i.test(url.pathname+url.search))continue;
+              if(url.origin!==base || !/\.(js|mjs)(?:\?|$)/i.test(url.pathname+url.search))continue;
               const r=await fetch(url,{signal:controller.signal});
               if(!r.ok){console.log("CHUNK_ERROR",JSON.stringify({path,status:r.status}));continue;}
               const js=await r.text();
