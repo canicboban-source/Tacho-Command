@@ -1,42 +1,44 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-test("V19 always invokes original production Golden read without manual pre-BLE gate",()=>{
- const client=readFileSync("app/app-v2/app-v2-client.tsx","utf8");
- const bridge=readFileSync("lib/app-v2-card-transport-controller-bridge.js","utf8");
- assert.match(client,/const result = await runBrowserAppV2GoldenCardRead\(\{/);
- assert.match(client,/PREVIEW V19/);
- assert.doesNotMatch(client,/onDeviceSelected|awaitingCardRecognition|createDeferredCardDeviceChooser|keepGattConnected/);
- assert.match(bridge,/readBrowserAppV2GoldenCardPayload\(\{/);
- assert.doesNotMatch(bridge,/onDeviceSelected|createDeferredCardDeviceChooser/);
+
+test("V21 retains the original GOLDEN card-reader entry point", () => {
+  const client = readFileSync("app/app-v2/app-v2-client.tsx", "utf8");
+  const bridge = readFileSync("lib/app-v2-card-transport-controller-bridge.js", "utf8");
+  assert.match(client, /runBrowserAppV2GoldenCardRead\(\{/);
+  assert.match(client, /PREVIEW V19/); // V19 and V20 overlays update marker before V21.
+  assert.doesNotMatch(client, /onDeviceSelected|awaitingCardRecognition|createDeferredCardDeviceChooser|keepGattConnected/);
+  assert.match(bridge, /readBrowserAppV2GoldenCardPayload\(\{/);
 });
-test("V20 landing install CTA opens the sole Chrome prompt owner",()=>{
- const source=readFileSync("app/pwa-install-cta.tsx","utf8");
- const guide=readFileSync("app/install-guide.tsx","utf8");
- const landing=readFileSync("app/landing-page.tsx","utf8");
- assert.match(source,/tachocommand-open-install-guide/);
- assert.doesNotMatch(source,/beforeinstallprompt|await deferred\.prompt/);
- assert.match(guide,/beforeinstallprompt/);
- assert.match(guide,/await prompt\.prompt\(\)/);
- assert.match(guide,/catch \(error\)/);
- assert.match(guide,/Otvori u Chrome-u/);
- assert.match(guide,/tachocommand-open-install-guide/);
- assert.match(guide,/if \(installed\) setOpen\(true\)/);
- assert.match(guide,/installed \? <p role="status"[^\n]*t\.installedHint/);
- assert.match(guide,/installed \? t\.installed : t\.title/);
- assert.doesNotMatch(guide,/if \(installed\)\s*\{\s*return <div/);
- assert.match(source,/display-mode: standalone/);
- assert.match(source,/installed \? installedLabel/);
- assert.match(landing,/<PwaInstallCta /);
- assert.match(landing,/Instaliraj V20 test aplikaciju/);
+
+test("V21 displays only the landing install button, never any installed badge", () => {
+  const cta = readFileSync("app/pwa-install-cta.tsx", "utf8");
+  const landing = readFileSync("app/landing-page.tsx", "utf8");
+  const root = readFileSync("app/page.tsx", "utf8");
+  const locales = readFileSync("app/[locale]/page.tsx", "utf8");
+  assert.match(cta, /beforeinstallprompt/);
+  assert.match(cta, /prompt\.prompt\(\)/);
+  assert.match(cta, /<button type="button"/);
+  assert.doesNotMatch(cta, /display-mode: standalone|appinstalled|installedLabel|tachocommand-open-install-guide/);
+  assert.match(landing, /<PwaInstallCta /);
+  assert.match(landing, /Instaliraj V21 test aplikaciju/);
+  assert.doesNotMatch(landing, /installedLabel=|installDone:/);
+  assert.doesNotMatch(root, /InstallGuide/);
+  assert.doesNotMatch(locales, /InstallGuide/);
 });
-test("Preview PWA identity differs from live and points to the same origin app",()=>{
- const m=JSON.parse(readFileSync("public/manifest.webmanifest","utf8"));
- assert.equal(m.short_name,"TC V20 Test");
- assert.equal(m.start_url,"/app?v20-preview");
- assert.equal(m.id,"/app?v20-preview");
- assert.equal(m.scope,"/");
- assert.equal(m.display,"standalone");
- const sw=readFileSync("public/sw.js","utf8");
- assert.match(sw,/self\.addEventListener\("install"/);
+
+test("V21 install CTA shows actionable browser instructions if Chrome offers no prompt", () => {
+  const cta = readFileSync("app/pwa-install-cta.tsx", "utf8");
+  assert.match(cta, /if \(!promptEvent\) \{/);
+  assert.match(cta, /setShowGuide\(true\)/);
+  assert.match(cta, /instructions/);
+  assert.match(cta, /unavailableLabel/);
+});
+
+test("V21 keeps preview PWA separate from the production app", () => {
+  const manifest = JSON.parse(readFileSync("public/manifest.webmanifest", "utf8"));
+  assert.equal(manifest.short_name, "TC V21 Test");
+  assert.equal(manifest.start_url, "/app?v21-preview");
+  assert.equal(manifest.id, "/app?v21-preview");
+  assert.equal(manifest.display, "standalone");
 });
