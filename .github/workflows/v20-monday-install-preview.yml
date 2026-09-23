@@ -78,11 +78,18 @@ jobs:
           node --input-type=module <<'NODE'
           const origin="https://tachocommand-app-v20-preview.canicboban.workers.dev";
           const read=async(path)=>{
-            const response=await fetch(origin+path,{redirect:"follow",cache:"no-store"});
-            if(!response.ok || new URL(response.url).origin!==origin){
-              throw new Error(path+" missing or redirected outside preview: "+response.status+" "+response.url);
+            let result;
+            // Brand-new workers.dev hostnames can take a moment to propagate
+            // after Wrangler prints "Deployed"; never treat an initial 404 as
+            // proof that the PWA is missing.
+            for(let attempt=1;attempt<=12;attempt++){
+              const response=await fetch(origin+path,{redirect:"follow",cache:"no-store"});
+              result={status:response.status,url:response.url};
+              if(response.ok && new URL(response.url).origin===origin)return response;
+              console.log("PREVIEW_PROPAGATION",JSON.stringify({path,attempt,...result}));
+              if(attempt<12)await new Promise(resolve=>setTimeout(resolve,3500));
             }
-            return response;
+            throw new Error(path+" missing or redirected outside preview after retries: "+JSON.stringify(result));
           };
           const root=await (await read("/")).text();
           if(!root.includes("Instaliraj V20 test aplikaciju")){
