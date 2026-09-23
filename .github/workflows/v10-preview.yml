@@ -1,0 +1,75 @@
+name: TachoCommand V10 isolated preview
+on:
+  push:
+    branches:
+      - fix/app-v10-preview-live-card-handoff-20260923
+    paths:
+      - .github/workflows/v10-preview.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tachocommand-v10-preview-deployment
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply the existing v9 patch stack
+        run: |
+          set -eu
+          gzip -dc f902-probe.patch.gz | git apply
+          gzip -dc safe-persistent-live.patch.gz | git apply
+          gzip -dc retained-live-status.patch.gz | git apply
+          gzip -dc incomplete-live-retention.patch.gz | git apply
+          gzip -dc live-before-telemetry.patch.gz | git apply
+          gzip -dc calendar-live-activity.patch.gz | git apply
+          gzip -dc live-card-handoff.patch.gz | git apply
+      - name: Apply v10 handoff fix around the unchanged golden card transport
+        run: |
+          set -eu
+          node scripts/v10-preview-handoff.mjs
+          git diff --name-only
+          for file in lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js; do
+            if ! git diff --quiet HEAD -- "$file"; then
+              echo "Golden transport modified: $file" >&2
+              exit 1
+            fi
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify v10 handoff and existing field regression tests
+        run: |
+          node --test tests/v10-preview-handoff.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/tacho-rhmi.test.mjs
+      - name: Build isolated artifact
+        run: npm run build
+      - name: Restrict deployment to the preview Worker with no production bindings
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const p = "dist/server/wrangler.json";
+          const c = JSON.parse(fs.readFileSync(p, "utf8"));
+          c.name = "tachocommand-app-v3-preview";
+          c.d1_databases = [];
+          c.r2_buckets = [];
+          c.kv_namespaces = [];
+          delete c.images;
+          c.observability = { enabled: false };
+          delete c.routes;
+          delete c.route;
+          delete c.zone_id;
+          delete c.custom_domains;
+          fs.writeFileSync(p, JSON.stringify(c));
+          if (c.name !== "tachocommand-app-v3-preview" || c.d1_databases.length || c.routes || c.route) process.exit(1);
+          NODE
+      - name: Deploy V10 preview only
+        run: npx wrangler deploy --config dist/server/wrangler.json
