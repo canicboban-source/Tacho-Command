@@ -33,8 +33,8 @@ jobs:
             const consoleErrors=[];
             page.on("console",msg=>{if(msg.type()==="error")consoleErrors.push(msg.text().slice(0,500));});
             page.on("pageerror",err=>consoleErrors.push(String(err).slice(0,500)));
-            const response=await page.goto(origin+"/",{waitUntil:"networkidle",timeout:45000});
-            await page.waitForTimeout(5000);
+            const response=await page.goto(origin+"/",{waitUntil:"domcontentloaded",timeout:30000});
+            await page.waitForTimeout(1500);
             const cdp=await context.newCDPSession(page);
             const manifest=await cdp.send("Page.getAppManifest");
             const errors=await cdp.send("Page.getInstallabilityErrors");
