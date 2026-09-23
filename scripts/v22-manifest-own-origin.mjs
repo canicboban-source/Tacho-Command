@@ -42,6 +42,7 @@ for(const testPath of ["tests/v17-production-clock.test.mjs","tests/v19-install-
  if(content.split("PREVIEW V21").length!==2)throw Error("Missing V21 marker "+testPath);
  writeFileSync(testPath,content.replace("PREVIEW V21","PREVIEW V22"));
 }
+replaceOnce("tests/v20-calendar-history.test.mjs", "/PREVIEW V21/", "/PREVIEW V22/");
 const installTests="tests/v19-install-proven-read.test.mjs";
 let install=readFileSync(installTests,"utf8");
 for(const [before,after] of [
