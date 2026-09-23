@@ -1,16 +1,30 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 /**
- * One installation flow for the entire page: the existing InstallGuide
- * owns the browser's one-use installation event. The landing button opens
- * its instructions instead of trying to invoke another browser prompt.
+ * The existing InstallGuide owns the ONE browser install prompt. This visible
+ * landing button delegates to it and stays actionable when already installed:
+ * pressing it opens the installed-app explanation instead of silently failing.
  */
-export default function PwaInstallCta({ label }: Readonly<{
+export default function PwaInstallCta({
+  label,
+  installedLabel,
+}: Readonly<{
   label: string;
   instructions: string;
   installedLabel: string;
   unavailableLabel: string;
 }>) {
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(display-mode: standalone)").matches) setInstalled(true);
+    const onInstalled = () => setInstalled(true);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => window.removeEventListener("appinstalled", onInstalled);
+  }, []);
+
   return (
     <span className="tcx-install-cta">
       <button
@@ -18,7 +32,7 @@ export default function PwaInstallCta({ label }: Readonly<{
         className="tcx-secondary"
         onClick={() => window.dispatchEvent(new Event("tachocommand-open-install-guide"))}
       >
-        {label}
+        {installed ? installedLabel + " · ℹ" : label}
       </button>
     </span>
   );
