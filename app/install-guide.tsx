@@ -25,7 +25,7 @@ const copy = {
     ],
     direct: "Instaliraj sada",
     directHint: "Chrome je ponudio direktnu instalaciju na ovom telefonu.",
-    manualHint: "Ako nema opcije za instalaciju, osveži stranicu u Chrome-u preko HTTPS veze i proveri da nije otvorena u ugrađenom browseru druge aplikacije.",
+    manualHint: "Ako gore vidiš X umesto Chrome kartica, stranica je možda otvorena u ugrađenom pregledaču. U njegovom meniju ⋮ izaberi „Otvori u Chrome-u“, pa u punom Chrome-u ⋮ → „Instaliraj aplikaciju“ ili „Dodaj na početni ekran“. Ako te opcije nema, Chrome trenutno ne nudi instalaciju za ovaj sajt.",
     close: "Zatvori",
   },
   en: {
@@ -42,7 +42,7 @@ const copy = {
     ],
     direct: "Install now",
     directHint: "Chrome offered direct installation on this phone.",
-    manualHint: "If the install option is missing, reload the page in Chrome over HTTPS and make sure it is not open inside another app's embedded browser.",
+    manualHint: "If you see an X instead of the Chrome tab switcher, this may be an in-app browser. Choose ⋮ → Open in Chrome, then in full Chrome use ⋮ → Install app or Add to Home screen. If absent, Chrome is not currently offering installation for this site.",
     close: "Close",
   },
   de: {
@@ -59,7 +59,7 @@ const copy = {
     ],
     direct: "Jetzt installieren",
     directHint: "Chrome bietet auf diesem Gerät eine direkte Installation an.",
-    manualHint: "Fehlt die Installationsoption, die Seite in Chrome über HTTPS neu laden und prüfen, dass sie nicht im eingebetteten Browser einer anderen App geöffnet ist.",
+    manualHint: "Bei einem X statt Chrome-Tabs kann die Seite in einem eingebetteten Browser geöffnet sein: ⋮ → In Chrome öffnen wählen. Danach in Chrome ⋮ → App installieren oder Zum Startbildschirm hinzufügen. Fehlt die Option, bietet Chrome die Installation derzeit nicht an.",
     close: "Schließen",
   },
 } as const;
@@ -87,6 +87,7 @@ export default function InstallGuide() {
   const [open, setOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
+  const [installError, setInstallError] = useState<string | null>(null);
 
   useEffect(() => {
     const onBeforeInstall = (event: Event) => {
@@ -99,8 +100,10 @@ export default function InstallGuide() {
       setOpen(false);
     };
 
+    const onLandingInstall = () => { setInstallError(null); setOpen(true); };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("tachocommand-open-install-guide", onLandingInstall);
 
     const standalone = window.matchMedia("(display-mode: standalone)").matches;
     if (standalone) queueMicrotask(() => setInstalled(true));
@@ -108,14 +111,28 @@ export default function InstallGuide() {
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("tachocommand-open-install-guide", onLandingInstall);
     };
   }, []);
 
   const installNow = async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") setInstallPrompt(null);
+    if (!installPrompt) {
+      setOpen(true);
+      return;
+    }
+    const prompt = installPrompt;
+    setInstallPrompt(null); // A browser install event can only be used once.
+    setInstallError(null);
+    try {
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice.outcome !== "accepted") setOpen(true);
+      // Only appinstalled (not acceptance) confirms successful installation.
+    } catch (error) {
+      const reason = error instanceof Error ? error.message.slice(0, 130) : String(error).slice(0, 130);
+      setInstallError("Chrome nije pokrenuo instalaciju: " + reason);
+      setOpen(true);
+    }
   };
 
   if (installed) {
@@ -142,6 +159,7 @@ export default function InstallGuide() {
                 </article>
               ))}
             </div>
+            {installError ? <p role="status" className={styles.hint}>{installError}</p> : null}
             {installPrompt ? (
               <div className={styles.directBox}>
                 <p>{t.directHint}</p>
