@@ -1,16 +1,16 @@
-name: TachoCommand V18 production-baseline isolated preview
+name: TachoCommand V18 explicit card-ready isolated preview
 on:
   push:
     branches:
       - fix/app-v18-card-recognition-ready-gate-20260923
     paths:
-      - .github/workflows/v18-production-baseline-preview.yml
+      - .github/workflows/v18-card-recognition-ready-preview.yml
       - scripts/v17-production-baseline-safety.mjs
       - scripts/v18-card-recognition-ready.mjs
       - lib/app-v2-card-ready-gate.js
       - tests/v18-card-recognition-ready.test.mjs
       - lib/app-v2-phone-timeline.js
-      - tests/v18-production-clock.test.mjs
+      - tests/v17-production-clock.test.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,14 +26,14 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
-      - name: Apply only phone-timezone and landing UI changes over official main
+      - name: Apply prod-baseline UI and V18 device-selection readiness gate, never alter GOLDEN
         run: |
           set -eu
-          sha256sum lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js lib/app-v2-field-transport.js lib/app-v2-card-transport-controller-bridge.js > /tmp/production-card-transport.sha256
+          sha256sum lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js lib/app-v2-field-transport.js > /tmp/production-card-transport.sha256
           node scripts/v17-production-baseline-safety.mjs
           node scripts/v18-card-recognition-ready.mjs
           sha256sum -c /tmp/production-card-transport.sha256
-          git diff --exit-code -- lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js lib/app-v2-field-transport.js lib/app-v2-card-transport-controller-bridge.js lib/app-v2-card-read-controller.js
+          git diff --exit-code -- lib/app-v2-golden-card-browser-transport.js lib/app-v2-golden-card-protocol-core.js lib/app-v2-field-transport.js lib/app-v2-card-read-controller.js
           git diff --stat
       - uses: actions/setup-node@v4
         with:
