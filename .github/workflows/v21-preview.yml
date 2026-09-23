@@ -49,7 +49,7 @@ jobs:
         run: npm ci
       - name: Verify production read, regression suite, phone time and safety copy
         run: |
-          node --test tests/v17-production-clock.test.mjs tests/v19-install-proven-read.test.mjs tests/v21-calendar-history.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/app-v2-card-pipeline.test.mjs tests/app-v2-parser-card-adapter.test.mjs tests/field-proven-product-state.test.mjs tests/tacho-rhmi.test.mjs
+          node --test tests/v17-production-clock.test.mjs tests/v19-install-proven-read.test.mjs tests/v20-calendar-history.test.mjs tests/app-v2-card-read-ui-wiring.test.mjs tests/app-v2-field-transport.test.mjs tests/app-v2-golden-card-browser-transport.test.mjs tests/app-v2-field-session.test.mjs tests/app-v2-card-pipeline.test.mjs tests/app-v2-parser-card-adapter.test.mjs tests/field-proven-product-state.test.mjs tests/tacho-rhmi.test.mjs
       - name: Build isolated production-derived app
         run: npm run build
       - name: Never deploy to production or the previous V14-V16 Worker
