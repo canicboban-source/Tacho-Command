@@ -6,4 +6,13 @@ for(const {path,before,after} of edits){
   if(count!==1)throw new Error("V15 patch anchor "+path+" count="+count+" anchor="+before.slice(0,110));
   writeFileSync(path,content.replace(before,after));
 }
+for (const testPath of [
+  "tests/v12-card-diagnostics.test.mjs",
+  "tests/v13-diagnostics-handoff.test.mjs",
+  "tests/v14-first-card-handoff.test.mjs",
+]) {
+  const source = readFileSync(testPath, "utf8");
+  if (!source.includes("PREVIEW V14")) throw new Error("V15 prior preview marker missing in " + testPath);
+  writeFileSync(testPath, source.replace(/PREVIEW V14/g, "PREVIEW V15"));
+}
 console.log("V15 phone-clock projection and localized landing safety notice applied");
