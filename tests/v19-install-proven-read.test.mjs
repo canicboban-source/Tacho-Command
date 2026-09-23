@@ -6,12 +6,12 @@ test("V21 retains the original GOLDEN card-reader entry point", () => {
   const client = readFileSync("app/app-v2/app-v2-client.tsx", "utf8");
   const bridge = readFileSync("lib/app-v2-card-transport-controller-bridge.js", "utf8");
   assert.match(client, /runBrowserAppV2GoldenCardRead\(\{/);
-  assert.match(client, /PREVIEW V19/); // V19 and V20 overlays update marker before V21.
+  assert.match(client, /PREVIEW V21/);
   assert.doesNotMatch(client, /onDeviceSelected|awaitingCardRecognition|createDeferredCardDeviceChooser|keepGattConnected/);
   assert.match(bridge, /readBrowserAppV2GoldenCardPayload\(\{/);
 });
 
-test("V21 displays only the landing install button, never any installed badge", () => {
+test("V21 landing has only one install button and no invented installed state", () => {
   const cta = readFileSync("app/pwa-install-cta.tsx", "utf8");
   const landing = readFileSync("app/landing-page.tsx", "utf8");
   const root = readFileSync("app/page.tsx", "utf8");
@@ -27,18 +27,27 @@ test("V21 displays only the landing install button, never any installed badge", 
   assert.doesNotMatch(locales, /InstallGuide/);
 });
 
-test("V21 install CTA shows actionable browser instructions if Chrome offers no prompt", () => {
+test("V21 asks Chrome for native install directly from the click, otherwise gives browser steps", () => {
   const cta = readFileSync("app/pwa-install-cta.tsx", "utf8");
+  assert.match(cta, /onClick=\{onInstallClick\}/);
+  assert.match(cta, /const prompt = promptEvent;/);
+  assert.match(cta, /prompt\.prompt\(\)/);
   assert.match(cta, /if \(!promptEvent\) \{/);
   assert.match(cta, /setShowGuide\(true\)/);
   assert.match(cta, /instructions/);
   assert.match(cta, /unavailableLabel/);
 });
 
-test("V21 keeps preview PWA separate from the production app", () => {
+test("V21 preview manifest and offline assets support Chrome PWA installation on separate origin", () => {
   const manifest = JSON.parse(readFileSync("public/manifest.webmanifest", "utf8"));
   assert.equal(manifest.short_name, "TC V21 Test");
   assert.equal(manifest.start_url, "/app?v21-preview");
   assert.equal(manifest.id, "/app?v21-preview");
+  assert.equal(manifest.scope, "/");
   assert.equal(manifest.display, "standalone");
+  assert.ok(manifest.icons.some(icon => icon.sizes === "192x192"));
+  assert.ok(manifest.icons.some(icon => icon.sizes === "512x512"));
+  const sw = readFileSync("public/sw.js", "utf8");
+  assert.match(sw, /self\.addEventListener\("install"/);
+  assert.match(sw, /self\.addEventListener\("fetch"/);
 });
