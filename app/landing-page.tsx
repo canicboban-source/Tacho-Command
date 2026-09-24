@@ -362,7 +362,7 @@ export default function LandingPage({ initialLocale = "sr", canonicalLocaleRoute
         <div className="tcx-brand"><span className="tcx-brand-mark">TC</span><strong>Tacho<span>Command</span></strong></div>
         <p>{t.footer}</p>
         <small className="tcx-release">{formatTachoCommandVersionLine()}</small>
-        <div><Link href="/privacy">{t.legal.privacy}</Link><Link href="/terms">{t.legal.terms}</Link><Link href="/impressum">{t.legal.impressum}</Link></div>
+        <div><Link href={`/${locale}/privacy`}>{t.legal.privacy}</Link><Link href={`/${locale}/terms`}>{t.legal.terms}</Link><Link href={`/${locale}/impressum`}>{t.legal.impressum}</Link></div>
       </footer>
     </main>
   );
