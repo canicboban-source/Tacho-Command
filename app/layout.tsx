@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   },
   description:
     "TachoCommand na podržanom VDO DTCO 4.1a očitava vozačku karticu preko Android telefona i prikazuje poslednjih 56 dana aktivnosti. Tahograf i kartica ostaju merodavni.",
-  manifest: "/manifest.webmanifest",
   applicationName: "TachoCommand",
   appleWebApp: {
     capable: true,
@@ -41,6 +40,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="sr">
+      <head><link rel="manifest" href="/manifest.webmanifest" /></head>
       <body>
         <ServiceWorkerRegister />
         <ProductAnalyticsObserver />

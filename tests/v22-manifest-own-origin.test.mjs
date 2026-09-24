@@ -1,10 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-test("Production HTML manifest and metadataBase reference the canonical domain",()=>{
+test("Production PWA manifest stays on the page origin even when SEO metadata has a canonical domain",()=>{
  const layout=readFileSync("app/layout.tsx","utf8");
  assert.match(layout,/metadataBase: new URL\("https:\/\/www\.tachocommand\.com"\)/);
- assert.match(layout,/manifest: "\/manifest\.webmanifest"/);
+ assert.match(layout,/<link rel="manifest" href="\/manifest\.webmanifest" \/>/);
+ assert.doesNotMatch(layout,/manifest: "\/manifest\.webmanifest"/);
  assert.doesNotMatch(layout,/tachocommand-app-v22-preview/);
 });
 test("Production install manifest preserves the installed app identity",()=>{

@@ -38,4 +38,6 @@ test("renders the tagged beta production candidate metadata", async (t) => {
   const html = await response.text();
   assert.match(html, productionVersionMeta);
   assert.doesNotMatch(html, /codex-preview/);
+  assert.match(html, /<link rel="manifest" href="\/manifest\.webmanifest"\s*\/>/);
+  assert.doesNotMatch(html, /rel="manifest" href="https:\/\//);
 });
