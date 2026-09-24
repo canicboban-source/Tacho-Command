@@ -1,0 +1,5 @@
+Promote verified 1.0.0-beta.2 to the existing production Worker.
+Prior production Worker version: e15960ee-9a42-4512-9de6-042c8be7da5d.
+Preview GitHub Actions run: 36027199996.
+Fix: older standalone home-screen launcher enters /app; install help no longer treats the Chrome menu alone as proof.
+No change to card data or production database schema.
