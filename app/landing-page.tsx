@@ -32,6 +32,10 @@ const copy = {
     installTest: "Instaliraj aplikaciju",
     installInstructions: "Otvori ovu stranicu u Chrome-u na Android telefonu. U meniju ⋮ izaberi „Instaliraj aplikaciju“. Ako se ponudi samo prečica, instalacija još nije dostupna u tom pregledaču.",
     installUnavailable: "Chrome nije ponudio instalacioni dijalog. Koristi meni pregledača.",
+    alreadyInstalled: "TachoCommand je već instaliran",
+    installedHelp: "U Chrome meniju ⋮ izaberi „Open TachoCommand“ ili otvori TC ikonu na telefonu. To pokreće instaliranu aplikaciju; novu instalaciju ne treba da radiš.",
+    noPromptHelp: "Ako u Chrome meniju vidiš „Open TachoCommand“, aplikacija je već instalirana: izaberi to. Ako vidiš „Install app“, izaberi instalaciju. Ne briši postojeću aplikaciju ili podatke samo zbog ažuriranja.",
+    closeInstall: "Razumem",
     safetyNote: "Bezbednost pre svega: TachoCommand koristite za povezivanje i očitavanje samo kada je vozilo bezbedno zaustavljeno. Ne rukujte telefonom tokom vožnje.",
     heroPreview: ["KARTICA", "Očitaj poslednjih 56 dana", "TAHOGRAF", "Poveži tahograf", "Ilustracija · bez stvarnih podataka"],
     periodPreview: ["DANAS", "OVA NEDELJA", "DVE NEDELJE"],
@@ -117,6 +121,7 @@ const copy = {
     heroB: "See the last 56 days.",
     heroText: "Connect to a supported tachograph, read your driver card and review days, activities and periods on your phone. Tested on VDO DTCO 4.1a with Android and Chrome.",
     start: "Start 3-day demo", starting: "Starting…", trialError: "The demo is temporarily unavailable. Please try again in a few minutes.", open: "Open app", guide: "Connection guide", installTest: "Install app", installInstructions: "Open this page in Chrome on Android. In the ⋮ menu choose Install app. If Chrome offers only a shortcut, installation is not available in that browser yet.", installUnavailable: "Chrome did not offer an installation prompt. Use the browser menu.", safetyNote: "Safety first: connect and read the driver card only when the vehicle is safely stopped. Do not operate your phone while driving.",
+    alreadyInstalled: "TachoCommand is already installed", installedHelp: "In Chrome ⋮ choose ‘Open TachoCommand’, or tap the TC icon on your phone. That opens the installed app; no new installation is needed.", noPromptHelp: "If Chrome shows ‘Open TachoCommand’, choose it: the app is already installed. If it shows ‘Install app’, choose installation. Do not clear app data just to update.", closeInstall: "Got it",
     proofTitle: "Not a promise. Proof from a real vehicle.",
     proofText: "TachoCommand has read a driver card over Bluetooth on three tachographs. The latest read on a VDO DTCO 4.1a was repeated successfully and displayed 56 days, with today first.",
     proof: [["56 days", "of history shown after reading"], ["3", "tachographs with a confirmed read"]],
@@ -141,6 +146,7 @@ const copy = {
     heroB: "Die letzten 56 Tage ansehen.",
     heroText: "Mit einem unterstützten Tachographen verbinden, die Fahrerkarte auslesen und Tage, Tätigkeiten und Zeiträume am Smartphone ansehen. Mit VDO DTCO 4.1a, Android und Chrome getestet.",
     start: "3-Tage-Demo starten", starting: "Wird gestartet…", trialError: "Die Demo ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.", open: "App öffnen", guide: "Verbindungsanleitung", installTest: "App installieren", installInstructions: "Diese Seite in Chrome auf Android öffnen. Im Menü ⋮ App installieren wählen. Wenn Chrome nur eine Verknüpfung anbietet, ist die Installation in diesem Browser noch nicht verfügbar.", installUnavailable: "Chrome bietet derzeit keinen Installationsdialog an. Browsermenü verwenden.", safetyNote: "Sicherheit zuerst: Smartphone nur bei sicher stehendem Fahrzeug verbinden und die Fahrerkarte auslesen. Telefon während der Fahrt nicht bedienen.",
+    alreadyInstalled: "TachoCommand ist bereits installiert", installedHelp: "In Chrome ⋮ ‘Open TachoCommand’ wählen oder das TC-Symbol auf dem Smartphone öffnen. Das startet die installierte App; eine neue Installation ist nicht nötig.", noPromptHelp: "Zeigt Chrome ‘Open TachoCommand’, ist die App bereits installiert: diesen Eintrag wählen. Bei ‘App installieren’ die Installation wählen. Für Updates keine App-Daten löschen.", closeInstall: "Verstanden",
     proofTitle: "Im Fahrzeug geprüft, wiederholt bestätigt.", proofText: "TachoCommand hat an drei Tachographen eine Fahrerkarte über Bluetooth ausgelesen. Der letzte Lesevorgang am VDO DTCO 4.1a wurde erfolgreich wiederholt; 56 Tage werden mit dem heutigen Tag zuerst angezeigt.", proof: [["56 Tage","Verlauf nach dem Auslesen angezeigt"],["3","Tachographen mit bestätigtem Lesevorgang"]],
     whyKicker: "WARUM TACHOCOMMAND", whyTitle: "Fahrer brauchen kein weiteres Menü. Sie brauchen eine Antwort.", whyText: "TachoCommand zeigt bestätigte Daten aus Tachograph und Fahrerkarte als übersichtliche Historie am Smartphone. Tachograph und Karte bleiben maßgeblich.",
     valueCards: [["01","Fahrerkarte auslesen","Das Auslesen in der App im Stillstand starten und den tatsächlichen Fortschritt verfolgen."],["02","56 Tage ansehen","Kartentage und Tätigkeiten erscheinen in einer klaren Historie, neueste zuerst."],["03","LIVE-Daten sehen","Aktuelle Tätigkeit und Zeiträume erscheinen, wenn bestätigte Daten vorliegen."],["04","Geprüfte Kompatibilität","Wir nennen nur Geräte und Abläufe, die an echter Hardware getestet wurden."]],
@@ -229,7 +235,7 @@ export default function LandingPage({ initialLocale = "sr", canonicalLocaleRoute
           <div className="tcx-safety-note"><strong>✓</strong><span>{t.safetyNote}</span></div>
           <div className="tcx-actions">
             <Link className="tcx-primary" href="/app" onClick={() => void trackProductAnalytics("open_app_click", { locale, surface: "landing" })}>{t.open}</Link>
-            <PwaInstallCta label={t.installTest} instructions={t.installInstructions} unavailableLabel={t.installUnavailable} />
+            <PwaInstallCta label={t.installTest} instructions={t.installInstructions} unavailableLabel={t.installUnavailable} installedLabel={t.alreadyInstalled} installedHelp={t.installedHelp} noPromptHelp={t.noPromptHelp} closeLabel={t.closeInstall} />
             <a className="tcx-secondary" href="#connect" onClick={() => void trackProductAnalytics("connection_guide_click", { locale, surface: "landing" })}>{t.guide}<span>↓</span></a>
           </div>
           <div className="tcx-hero-trustline">{t.trustline.map((item) => <span key={item}>✓ {item}</span>)}</div>

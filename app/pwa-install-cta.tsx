@@ -6,24 +6,33 @@ type BrowserInstallPrompt = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
+type RelatedWebApp = { platform: string; url?: string; id?: string };
 
 /**
- * Landing owns its one visible installation button and one browser prompt
- * listener. A standalone display mode is not proof of a successful install:
- * never show a fabricated "app installed" badge or block the button.
+ * Landing owns its one visible installation button. Browser evidence (standalone,
+ * appinstalled, or a verified related web app) drives the installed guidance.
  */
 export default function PwaInstallCta({
   label,
   instructions,
   unavailableLabel,
+  installedLabel,
+  installedHelp,
+  noPromptHelp,
+  closeLabel,
 }: Readonly<{
   label: string;
   instructions: string;
   unavailableLabel: string;
+  installedLabel: string;
+  installedHelp: string;
+  noPromptHelp: string;
+  closeLabel: string;
 }>) {
   const [promptEvent, setPromptEvent] = useState<BrowserInstallPrompt | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
     const onPrompt = (event: Event) => {
@@ -32,14 +41,36 @@ export default function PwaInstallCta({
       setMessage(null);
       setShowGuide(false);
     };
+    const onInstalled = () => {
+      setInstalled(true);
+      setPromptEvent(null);
+      setShowGuide(false);
+    };
     window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    const browser = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<RelatedWebApp[]> };
+    let cancelled = false;
+    if (window.matchMedia("(display-mode: standalone)").matches) queueMicrotask(() => { if (!cancelled) onInstalled(); });
+    if (browser.getInstalledRelatedApps) {
+      void browser.getInstalledRelatedApps().then((apps) => {
+        if (!cancelled && apps.some((app) => app.platform === "webapp" && app.url?.includes("/manifest.webmanifest"))) onInstalled();
+      }).catch(() => undefined);
+    }
+    return () => {
+      cancelled = true;
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   const onInstallClick = () => {
-    // Never label anything as installed. Let Chrome handle the actual action.
+    if (installed) {
+      setMessage(installedHelp);
+      setShowGuide(true);
+      return;
+    }
     if (!promptEvent) {
-      setMessage(unavailableLabel);
+      setMessage(noPromptHelp);
       setShowGuide(true);
       return;
     }
@@ -70,10 +101,18 @@ export default function PwaInstallCta({
   return (
     <span className="tcx-install-cta">
       <button type="button" className="tcx-secondary" onClick={onInstallClick}>
-        {label}
+        {installed ? installedLabel : label}
       </button>
-      {message ? <small role="status">{message}</small> : null}
-      {showGuide ? <small>{instructions}</small> : null}
+      {showGuide ? (
+        <div className="tcx-install-backdrop" role="presentation" onClick={() => setShowGuide(false)}>
+          <section className="tcx-install-dialog" role="dialog" aria-modal="true" aria-label={installed ? installedLabel : label} onClick={(event) => event.stopPropagation()}>
+            <strong>{installed ? installedLabel : label}</strong>
+            {message ? <p role="status">{message}</p> : null}
+            {!installed && promptEvent ? <p>{instructions}</p> : null}
+            <button type="button" className="tcx-primary" onClick={() => setShowGuide(false)}>{closeLabel}</button>
+          </section>
+        </div>
+      ) : null}
     </span>
   );
 }

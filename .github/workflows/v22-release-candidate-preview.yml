@@ -10,6 +10,8 @@ on:
       - tests/field-proven-premium-ui.test.mjs
       - lib/app-v2-phone-timeline.js
       - tests/v17-production-clock.test.mjs
+      - app/pwa-install-cta.tsx
+      - public/manifest.webmanifest
       - app/landing-page.tsx
       - app/landing-oled.css
       - app/layout.tsx
@@ -85,7 +87,7 @@ jobs:
           let root = "";
           for (let attempt = 0; attempt < 12; attempt++) {
             root = await (await read("/")).text();
-            if (root.includes("1.0.0-beta.1") && root.includes("manifest.webmanifest")) break;
+            if (root.includes("1.0.0-beta.2") && root.includes("manifest.webmanifest")) break;
             if (attempt === 11) throw new Error("Preview landing lacks beta identity or manifest");
             await new Promise((resolve) => setTimeout(resolve, 3000));
           }
@@ -102,5 +104,5 @@ jobs:
               || manifest.short_name !== "TachoCommand" || manifest.display !== "standalone") {
             throw new Error("Wrong beta app identity on preview");
           }
-          console.log("TachoCommand 1.0.0-beta.1 candidate verified:", origin);
+          console.log("TachoCommand 1.0.0-beta.2 candidate verified:", origin);
           NODE

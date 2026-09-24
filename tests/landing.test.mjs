@@ -7,6 +7,7 @@ const landingStyles = await readFile(new URL("../app/landing-oled.css", import.m
 const launcher = await readFile(new URL("../app/trial-launcher.tsx", import.meta.url), "utf8");
 const appPage = await readFile(new URL("../app/app/page.tsx", import.meta.url), "utf8");
 const installGuide = await readFile(new URL("../app/install-guide.tsx", import.meta.url), "utf8");
+const installCta = await readFile(new URL("../app/pwa-install-cta.tsx", import.meta.url), "utf8");
 const manifest = JSON.parse(await readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
 const serviceWorker = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
 
@@ -79,8 +80,17 @@ test("PWA keeps the existing production identity when V22 is installed", () => {
   assert.equal(manifest.id, "/app");
   assert.equal(manifest.start_url, "/app");
   assert.equal(manifest.display, "standalone");
+  assert.deepEqual(manifest.related_applications, [{ platform: "webapp", url: "/manifest.webmanifest", id: "https://tachocommand.com/app" }]);
   assert.equal(manifest.theme_color, "#020304");
-  assert.match(serviceWorker, /tachocommand-shell-v49-app-beta-1/);
+  assert.match(serviceWorker, /tachocommand-shell-v50-app-beta-2/);
   assert.match(serviceWorker, /CORE_ASSETS = \["\/", "\/app"/);
   assert.match(serviceWorker, /caches\.match\("\/"\)/);
+});
+
+test("landing explains Chrome's Open TachoCommand menu without asking to delete saved data", () => {
+  assert.match(landing, /„Open TachoCommand“/);
+  assert.match(landing, /Ne briši postojeću aplikaciju ili podatke/);
+  assert.match(installCta, /getInstalledRelatedApps/);
+  assert.match(installCta, /appinstalled/);
+  assert.match(installCta, /role="dialog"/);
 });

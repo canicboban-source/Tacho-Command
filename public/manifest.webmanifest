@@ -5,6 +5,13 @@
   "id": "/app",
   "start_url": "/app",
   "scope": "/",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "/manifest.webmanifest",
+      "id": "https://tachocommand.com/app"
+    }
+  ],
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#020304",

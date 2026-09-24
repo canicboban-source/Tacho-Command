@@ -11,7 +11,7 @@ test("V21 retains the original GOLDEN card-reader entry point", () => {
   assert.match(bridge, /readBrowserAppV2GoldenCardPayload\(\{/);
 });
 
-test("V21 landing has only one install button and no invented installed state", () => {
+test("landing keeps one install owner and only browser evidence marks an app installed", () => {
   const cta = readFileSync("app/pwa-install-cta.tsx", "utf8");
   const landing = readFileSync("app/landing-page.tsx", "utf8");
   const root = readFileSync("app/page.tsx", "utf8");
@@ -19,10 +19,13 @@ test("V21 landing has only one install button and no invented installed state", 
   assert.match(cta, /beforeinstallprompt/);
   assert.match(cta, /prompt\.prompt\(\)/);
   assert.match(cta, /<button type="button"/);
-  assert.doesNotMatch(cta, /display-mode: standalone|appinstalled|installedLabel|tachocommand-open-install-guide/);
+  assert.match(cta, /getInstalledRelatedApps/);
+  assert.match(cta, /appinstalled/);
+  assert.doesNotMatch(cta, /localStorage\.setItem\([^)]*installed|tachocommand-open-install-guide/);
   assert.match(landing, /<PwaInstallCta /);
   assert.match(landing, /Instaliraj aplikaciju/);
-  assert.doesNotMatch(landing, /installedLabel=|installDone:/);
+  assert.match(landing, /installedLabel=\{t\.alreadyInstalled\}/);
+  assert.doesNotMatch(landing, /installDone:/);
   assert.doesNotMatch(root, /InstallGuide/);
   assert.doesNotMatch(locales, /InstallGuide/);
 });

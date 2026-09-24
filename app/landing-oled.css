@@ -163,6 +163,11 @@
 .tcx-install-cta { display: inline-flex; flex-direction: column; gap: 7px; max-width: min(100%, 410px); }
 .tcx-install-cta > .tcx-secondary { width: 100%; }
 .tcx-install-cta small { font-size: .76rem; color: #bbd1c8; line-height: 1.55; }
+.tcx-install-backdrop { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.78); }
+.tcx-install-dialog { width: min(100%, 430px); padding: 26px; border: 1px solid rgba(98,217,255,.3); border-radius: 18px; background: #10212a; color: #f8fafc; box-shadow: 0 24px 90px rgba(0,0,0,.65); text-align: left; }
+.tcx-install-dialog strong { display: block; font-size: 1.2rem; line-height: 1.3; }
+.tcx-install-dialog p { margin: 16px 0 22px; color: #d5e0e8; line-height: 1.55; }
+.tcx-install-dialog button { width: 100%; }
 .tcx-hero-trustline { display: flex; flex-wrap: wrap; gap: 7px 15px; margin-top: 22px; color: #656e79; font-size: .62rem; font-weight: 750; }
 .tcx-hero-trustline span::first-letter { color: var(--tcx-green); }
 
