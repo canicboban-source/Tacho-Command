@@ -20,7 +20,20 @@ const json = (body: unknown, init: ResponseInit = {}) =>
 export async function GET() {
   try {
     const db = await getDb();
-    await db.select({ id: technicalTelemetryEvents.id }).from(technicalTelemetryEvents).limit(1);
+    await db.select({
+      id: technicalTelemetryEvents.id,
+      sessionId: technicalTelemetryEvents.sessionId,
+      attemptCode: technicalTelemetryEvents.attemptCode,
+      event: technicalTelemetryEvents.event,
+      phase: technicalTelemetryEvents.phase,
+      outcome: technicalTelemetryEvents.outcome,
+      did: technicalTelemetryEvents.did,
+      durationMs: technicalTelemetryEvents.durationMs,
+      nrc: technicalTelemetryEvents.nrc,
+      deviceFamily: technicalTelemetryEvents.deviceFamily,
+      errorCode: technicalTelemetryEvents.errorCode,
+      createdAt: technicalTelemetryEvents.createdAt,
+    }).from(technicalTelemetryEvents).limit(1);
 
     return json({
       status: "ready",

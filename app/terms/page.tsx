@@ -14,11 +14,10 @@ export default function TermsPage() {
       <p>TachoCommand je tokom bete pomoćni, eksperimentalni prikaz. Tahograf, kartica vozača, zvanični zapisi i važeći propisi ostaju merodavni.</p>
       <h2>Bezbedna upotreba</h2>
       <p>Bluetooth povezivanje, podešavanje i pregled telefona obavljaju se samo dok je vozilo bezbedno zaustavljeno. Aplikacija se ne koristi tokom vožnje.</p>
-      <h2>Trodnevni demo</h2>
-      <p>Demo traje 72 sata od prvog uspešnog pokretanja, ne zahteva platnu karticu i ne pretvara se automatski u naplatu.</p>
+      <h2>Trajanje beta pristupa</h2>
+      <p>Trenutna beta aplikacija nema automatsko ograničenje pristupa od 72 sata, ne zahteva platnu karticu i ne pretvara se automatski u naplatu.</p>
       <h2>Beta pristup</h2>
       <p>Funkcije se mogu menjati na osnovu terenskih rezultata. Kupovina još nije dostupna i nijedna cena na sajtu trenutno ne predstavlja aktivnu ponudu za zaključenje ugovora.</p>
     </LegalPage>
   );
 }
-

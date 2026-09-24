@@ -1,0 +1,117 @@
+name: Audit beta.4 isolated preview
+on:
+  push:
+    branches:
+      - fix/audit-beta-hardening-20260925
+permissions:
+  contents: read
+concurrency:
+  group: tachocommand-audit-beta4-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: Verify entire candidate
+        run: node --test tests/*.test.mjs
+      - name: Restrict this deployment to its own Worker without production bindings or routes
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "dist/server/wrangler.json";
+          const config = JSON.parse(readFileSync(path, "utf8"));
+          config.name = "tachocommand-audit-beta4-preview";
+          config.d1_databases = [];
+          config.r2_buckets = [];
+          config.kv_namespaces = [];
+          delete config.routes;
+          delete config.route;
+          delete config.zone_id;
+          delete config.custom_domains;
+          delete config.images;
+          config.observability = { enabled: false };
+          if (config.name === "tachocommand" || config.d1_databases.length
+              || config.routes || config.route || config.zone_id || config.custom_domains) {
+            throw new Error("Preview configuration must not touch production");
+          }
+          writeFileSync(path, JSON.stringify(config));
+          NODE
+      - name: Upload only the isolated Worker
+        run: npx wrangler deploy --config dist/server/wrangler.json
+      - name: Verify landing, app, manifest and service worker on that origin
+        run: |
+          node --input-type=module <<'NODE'
+          const origin = "https://tachocommand-audit-beta4-preview.canicboban.workers.dev";
+          const read = async (path) => {
+            for (let attempt = 0; attempt < 12; attempt++) {
+              const response = await fetch(origin + path, { cache: "no-store" });
+              if (response.ok) return response;
+              if (attempt === 11) throw new Error(`${path} failed: ${response.status}`);
+              await new Promise((resolve) => setTimeout(resolve, 3000));
+            }
+          };
+          let root = "";
+          for (let attempt = 0; attempt < 12; attempt++) {
+            root = await (await read("/")).text();
+            if (root.includes("1.0.0-beta.4") && root.includes("manifest.webmanifest")) break;
+            if (attempt === 11) throw new Error("Preview landing lacks beta identity or manifest");
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+          const app = await read("/app");
+          if (app.headers.get("x-content-type-options") !== "nosniff" ||
+              !app.headers.get("content-security-policy")?.includes("frame-ancestors")) {
+            throw new Error("Preview lacks security headers");
+          }
+          const sw = await (await read("/sw.js")).text();
+          if (!sw.includes("tachocommand-shell-v52-app-beta-4") || !sw.includes('url.pathname.startsWith("/api/")')) {
+            throw new Error("Preview service worker is not the reviewed beta.4 build");
+          }
+          for (const path of ["/impressum", "/privacy", "/terms", "/en/privacy", "/de/privacy"]) {
+            const html = await (await read(path)).text();
+            if (!html.includes("info@tachocommand.com") && path !== "/terms") {
+              throw new Error(`${path} lacks publisher contact`);
+            }
+          }
+          const manifest = await (await read("/manifest.webmanifest")).json();
+          if (manifest.id !== "/app" || manifest.start_url !== "/app"
+              || manifest.short_name !== "TachoCommand" || manifest.display !== "standalone") {
+            throw new Error("Wrong beta app identity on preview");
+          }
+          console.log("TachoCommand 1.0.0-beta.4 candidate verified:", origin);
+          NODE
+      - name: Verify Chrome reads its own manifest and icons on the preview origin
+        run: |
+          npm install --no-save --ignore-scripts playwright-core
+          node --input-type=module <<'NODE'
+          import { chromium } from "playwright-core";
+          const origin = "https://tachocommand-audit-beta4-preview.canicboban.workers.dev";
+          const browser = await chromium.launch({ headless: true, executablePath: "/usr/bin/google-chrome", args: ["--no-sandbox"] });
+          try {
+            const context = await browser.newContext({ serviceWorkers: "allow" });
+            const page = await context.newPage();
+            const response = await page.goto(origin + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+            await page.waitForTimeout(1500);
+            const href = await page.locator('link[rel="manifest"]').getAttribute("href");
+            const cdp = await context.newCDPSession(page);
+            const manifest = await cdp.send("Page.getAppManifest");
+            const errors = await cdp.send("Page.getInstallabilityErrors");
+            console.log("PWA_CHROME_DIAGNOSTIC", JSON.stringify({ status: response?.status(), href, manifest: manifest.url, errors }));
+            if (response?.status() !== 200 || href !== "/manifest.webmanifest" || manifest.url !== origin + "/manifest.webmanifest"
+                || (errors.installabilityErrors ?? []).some(e => /manifest|icon|start-url/.test(e.errorId))) {
+              throw new Error("Chrome cannot install the same-origin preview manifest");
+            }
+            await context.close();
+          } finally { await browser.close(); }
+          NODE

@@ -24,6 +24,7 @@ type ProductControls = Readonly<{
   phoneTimeLabel: string | null;
   onConnect: () => void;
   onReadCard: () => void;
+  onCancelCardRead: () => void;
 }>;
 
 const nav: readonly Readonly<{ id: ProductTab; label: string; glyph: string }>[] = Object.freeze([
@@ -252,6 +253,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
           {controls.cardReadPhase === "error" ? <small>Nova kartica nije potvrđena. Kod: {controls.cardReadOutcome ?? "nepoznato"}. Prikazani podaci su od ranije.</small> : null}
           {controls.phase === "card-reading" && controls.screenAwake === "active" ? <small>Ekran ostaje uključen tokom očitavanja.</small> : null}
           {controls.cardReadPhase === "accepted" && (!state.driverName || !state.cardLast4) ? <small>Identitet nove kartice nije potpuno očitan. Ne pripisuj podatke vozaču bez provere.</small> : null}
+          <small>Za bezbednost poveži se i očitaj karticu samo kada je vozilo zaustavljeno. Aplikacija trenutno ne meri brzinu.</small>
         </div>
         <button
           type="button"
@@ -260,6 +262,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
         >
           {controls.phase === "card-reading" ? "Očitavam…" : "Očitaj karticu"}
         </button>
+        {controls.phase === "card-reading" ? <button type="button" onClick={controls.onCancelCardRead}>Prekini očitavanje</button> : null}
       </section>
     </div>
   );

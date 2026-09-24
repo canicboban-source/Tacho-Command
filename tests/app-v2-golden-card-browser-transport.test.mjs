@@ -118,3 +118,37 @@ test("browser card transport keeps the scoped physical field-proof marker in sou
   assert.doesNotMatch(source, /fieldProven: false/);
   assert.doesNotMatch(source, /saveLastGoodCardSnapshot|localStorage|parseAppV2CardPayload/);
 });
+
+test("Bluetooth disconnect rejects the pending card read without waiting for its idle timeout", async () => {
+  const fifo = new FakeCharacteristic("29d3a479-1592-47df-80a4-afa742d369bb");
+  const credits = new FakeCharacteristic("db9c4128-bff3-41fe-a306-fb6f9a8aeb2d");
+  const listeners = new Map();
+  credits.onWrite = async (bytes) => {
+    if (bytes[0] === 1) queueMicrotask(() => credits.emit([1]));
+  };
+  fifo.onWrite = async () => queueMicrotask(() => {
+    gatt.connected = false;
+    listeners.get("gattserverdisconnected")?.();
+  });
+  const gatt = {
+    connected: false,
+    async connect() {
+      this.connected = true;
+      return { getPrimaryServices: async () => [{
+        uuid: "eef90782-55dd-4388-b80b-695aba7a69b5",
+        getCharacteristics: async () => [fifo, credits],
+      }] };
+    },
+    disconnect() { this.connected = false; },
+  };
+  const bluetooth = { requestDevice: async () => ({
+    gatt,
+    addEventListener(name, handler) { listeners.set(name, handler); },
+    removeEventListener(name) { listeners.delete(name); },
+  }) };
+  await assert.rejects(
+    readAppV2GoldenCardPayload({ bluetooth, requestTimeoutMs: 50, cardIdleTimeoutMs: 60_000, p3GuardMs: 0 }),
+    /prekinut|zatvoren/i,
+  );
+  assert.equal(listeners.has("gattserverdisconnected"), false);
+});

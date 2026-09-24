@@ -6,7 +6,7 @@ import ProductAnalyticsObserver from "./product-analytics-observer";
 import { TACHOCOMMAND_VERSIONS } from "../lib/product-version.js";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.tachocommand.com"),
+  metadataBase: new URL("https://tachocommand.com"),
   title: {
     default: "TachoCommand — očitaj karticu i pregledaj 56 dana",
     template: "%s | TachoCommand",

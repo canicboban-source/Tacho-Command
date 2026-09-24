@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FieldProvenPremiumUi from "../app/field-proven-premium-ui";
 import { createFieldProvenProductState } from "../../lib/field-proven-product-state.js";
 import {
@@ -42,6 +42,8 @@ function formatRestoreTime(value: string | null) {
 export default function AppV2Client() {
   const [restoreState, setRestoreState] = useState<RestoreState>("checking");
   const [cardState, setCardState] = useState<Readonly<Record<string, unknown>> | null>(null);
+  const [savedCardVisible, setSavedCardVisible] = useState(false);
+  const readAbort = useRef<AbortController | null>(null);
   const [capturedAtIso, setCapturedAtIso] = useState<string | null>(null);
   const [liveRunState, setLiveRunState] = useState<LiveRunState>("idle");
   const [liveSession, setLiveSession] = useState(() => createAppV2LiveSession());
@@ -52,6 +54,8 @@ export default function AppV2Client() {
   const [phoneZoneKey, setPhoneZoneKey] = useState<string | null>(null);
   const [cardTelemetry, setCardTelemetry] = useState<{ status: string; attemptCode: string | null } | null>(null);
   const [screenAwake, setScreenAwake] = useState<ScreenAwakeState>("idle");
+
+  useEffect(() => () => readAbort.current?.abort(), []);
 
   useEffect(() => {
     if (!cardSession.busy && liveRunState !== "running") {
@@ -115,6 +119,7 @@ export default function AppV2Client() {
         }
 
         setCardState(restoredCard);
+        setSavedCardVisible(false);
         setCapturedAtIso(snapshot.capturedAtIso);
         setCardSession(createAppV2CardSession({
           currentCard: restoredCard,
@@ -151,7 +156,8 @@ export default function AppV2Client() {
   }, []);
 
   const displayCard = useMemo(() => {
-    if (!phoneZoneKey || !cardState) return cardState ?? {};
+    if (!savedCardVisible || !cardState) return {};
+    if (!phoneZoneKey) return cardState;
     const timeZone = phoneZoneKey.split("|")[0];
     const projected = projectCardTimelineForPhone(cardState, timeZone);
     // Two calendar weeks: previous Monday through current local day. Preserve
@@ -160,7 +166,7 @@ export default function AppV2Client() {
       ...projected,
       fortnightDrivingMinutes: calendarFortnightFromMonday(projected.historyDays, { timeZone }),
     });
-  }, [cardState, phoneZoneKey]);
+  }, [cardState, phoneZoneKey, savedCardVisible]);
 
   const state = useMemo(() => {
     const latestDiagnostics = liveSession.productLive ?? {};
@@ -225,6 +231,9 @@ export default function AppV2Client() {
   const runCardRead = async () => {
     if (cardSession.busy || liveRunState === "running") return;
     setScreenAwake("idle");
+    setSavedCardVisible(false);
+    const controller = new AbortController();
+    readAbort.current = controller;
 
     const readingSession = beginAppV2CardRead(cardSession);
     setCardSession(readingSession);
@@ -237,7 +246,9 @@ export default function AppV2Client() {
       storage: window.localStorage,
       capturedAtIso: new Date().toISOString(),
       onProgress: (progress: CardReadProgress) => setCardReadProgress(progress),
+      signal: controller.signal,
     });
+    if (readAbort.current === controller) readAbort.current = null;
 
     if (result.session) setCardSession(result.session);
     setCardReadOutcome(result.status);
@@ -249,6 +260,7 @@ export default function AppV2Client() {
 
     if (result.status === "accepted" && result.session?.currentCard) {
       setCardState(result.session.currentCard);
+      setSavedCardVisible(true);
       setCapturedAtIso(result.session.capturedAtIso);
       setRestoreState("restored");
       return;
@@ -258,6 +270,14 @@ export default function AppV2Client() {
   return (
     <div className={styles.stage}>
       <section className={styles.instrumentFrame} aria-label="TachoCommand premium instrument">
+        {restoreState === "restored" && cardState && !savedCardVisible && !cardSession.busy ? (
+          <section className={styles.savedCardGate} role="status">
+            <strong>Prethodno sačuvana kartica</strong>
+            <p>Vozač: {String(cardState.driverName ?? "identitet nije očitan")} · kartica •••• {String(cardState.cardLast4 ?? "nepoznato")}. Sačuvano {restoredLabel ?? "ranije"}. Istorija je sakrivena dok ne izabereš karticu.</p>
+            <button type="button" onClick={() => setSavedCardVisible(true)}>Prikaži podatke ove kartice</button>
+            <small>Ako je u tahografu druga kartica, pokreni novo očitavanje umesto prikaza ovih podataka.</small>
+          </section>
+        ) : null}
         <FieldProvenPremiumUi
           state={state}
           controls={{
@@ -282,6 +302,7 @@ export default function AppV2Client() {
             versionLine: formatTachoCommandVersionLine(),
             onConnect: runLiveRead,
             onReadCard: runCardRead,
+            onCancelCardRead: () => readAbort.current?.abort(),
           }}
         />
       </section>
