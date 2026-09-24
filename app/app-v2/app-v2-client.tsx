@@ -25,6 +25,7 @@ type CardReadProgress = Readonly<{
   byteLength: number;
   complete: boolean;
 }>;
+type ScreenAwakeState = "idle" | "active" | "unavailable";
 
 function formatRestoreTime(value: string | null) {
   if (!value) return null;
@@ -50,6 +51,53 @@ export default function AppV2Client() {
   const [cardReadOutcome, setCardReadOutcome] = useState<string | null>(null);
   const [phoneZoneKey, setPhoneZoneKey] = useState<string | null>(null);
   const [cardTelemetry, setCardTelemetry] = useState<{ status: string; attemptCode: string | null } | null>(null);
+  const [screenAwake, setScreenAwake] = useState<ScreenAwakeState>("idle");
+
+  useEffect(() => {
+    if (!cardSession.busy && liveRunState !== "running") {
+      return;
+    }
+
+    let closed = false;
+    let lock: WakeLockSentinel | null = null;
+    let requesting = false;
+    const acquire = async () => {
+      if (closed || requesting || lock || document.visibilityState !== "visible") return;
+      if (!navigator.wakeLock) {
+        setScreenAwake("unavailable");
+        return;
+      }
+      requesting = true;
+      try {
+        const next = await navigator.wakeLock.request("screen");
+        if (closed) {
+          await next.release();
+          return;
+        }
+        lock = next;
+        setScreenAwake("active");
+        next.addEventListener("release", () => {
+          if (lock === next) lock = null;
+          if (!closed) {
+            setScreenAwake("unavailable");
+            if (document.visibilityState === "visible") void acquire();
+          }
+        }, { once: true });
+      } catch {
+        if (!closed) setScreenAwake("unavailable");
+      } finally {
+        requesting = false;
+      }
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") void acquire(); };
+    document.addEventListener("visibilitychange", onVisible);
+    void acquire();
+    return () => {
+      closed = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      if (lock) void lock.release();
+    };
+  }, [cardSession.busy, liveRunState]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -136,6 +184,7 @@ export default function AppV2Client() {
 
   const runLiveRead = async () => {
     if (liveRunState === "running" || cardSession.busy) return;
+    setScreenAwake("idle");
     setLiveRunState("running");
     setLiveSession(createAppV2LiveSession({ phase: "connecting" }));
 
@@ -175,6 +224,7 @@ export default function AppV2Client() {
 
   const runCardRead = async () => {
     if (cardSession.busy || liveRunState === "running") return;
+    setScreenAwake("idle");
 
     const readingSession = beginAppV2CardRead(cardSession);
     setCardSession(readingSession);
@@ -226,6 +276,7 @@ export default function AppV2Client() {
             cardReadProgress,
             cardReadPhase: cardSession.phase,
             cardReadOutcome,
+            screenAwake,
             cardTelemetry,
             phoneTimeLabel: phoneZoneKey ? phoneZoneKey.split("|")[0] + " · " + phoneZoneKey.split("|")[1] : null,
             versionLine: formatTachoCommandVersionLine(),

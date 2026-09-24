@@ -18,6 +18,7 @@ type ProductControls = Readonly<{
   }> | null;
   cardReadPhase: "idle" | "reading" | "accepted" | "error";
   cardReadOutcome: string | null;
+  screenAwake: "idle" | "active" | "unavailable";
   cardTelemetry: Readonly<{ status: string; attemptCode: string | null }> | null;
   versionLine: string;
   phoneTimeLabel: string | null;
@@ -160,6 +161,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
             {controls.phase === "idle" && "Poveži tahograf za LIVE podatke"}
           </strong>
           {controls.errorText ? <small>{controls.errorText}</small> : null}
+          {(controls.phase === "connecting" || controls.phase === "card-reading") && controls.screenAwake === "unavailable" ? <small>Telefon nije dozvolio da ekran ostane uključen. Drži ekran aktivnim tokom očitavanja.</small> : null}
         </div>
         <button
           type="button"
@@ -248,6 +250,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
             </div>
           ) : state.cardReadComplete ? <small>{state.historyDaysAvailable}/56 dana prethodno sačuvano</small> : null}
           {controls.cardReadPhase === "error" ? <small>Nova kartica nije potvrđena. Kod: {controls.cardReadOutcome ?? "nepoznato"}. Prikazani podaci su od ranije.</small> : null}
+          {controls.phase === "card-reading" && controls.screenAwake === "active" ? <small>Ekran ostaje uključen tokom očitavanja.</small> : null}
           {controls.cardReadPhase === "accepted" && (!state.driverName || !state.cardLast4) ? <small>Identitet nove kartice nije potpuno očitan. Ne pripisuj podatke vozaču bez provere.</small> : null}
         </div>
         <button

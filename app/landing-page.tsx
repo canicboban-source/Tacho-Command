@@ -36,8 +36,8 @@ const copy = {
     heroPreview: ["KARTICA", "Očitaj poslednjih 56 dana", "TAHOGRAF", "Poveži tahograf", "Ilustracija · bez stvarnih podataka"],
     periodPreview: ["DANAS", "OVA NEDELJA", "DVE NEDELJE"],
     proofTitle: "Očitavanje potvrđeno u vozilu.",
-    proofText: "Na stvarnom VDO DTCO 4.1a TachoCommand je očitao vozačku karticu preko Bluetooth veze i prikazao njenu istoriju.",
-    proof: [["56 dana", "istorije prikazano posle očitavanja"], ["DTCO 4.1a", "model na kome je očitavanje provereno"]],
+    proofText: "Na tri tahografa TachoCommand je očitao vozačku karticu preko Bluetooth veze. Poslednje očitavanje na DTCO 4.1a ponovljeno je uspešno; prikazano je 56 dana, sa današnjim danom na vrhu.",
+    proof: [["56 dana", "istorije prikazano posle očitavanja"], ["3", "tahografa sa potvrđenim očitavanjem"]],
     whyKicker: "ZAŠTO TACHOCOMMAND",
     whyTitle: "Vozaču ne treba još jedan meni. Treba mu odgovor.",
     whyText: "TachoCommand prikazuje potvrđene podatke iz tahografa i očitane kartice u preglednoj istoriji na telefonu. Tahograf i kartica ostaju merodavni izvori.",
@@ -118,8 +118,8 @@ const copy = {
     heroText: "Connect to a supported tachograph, read your driver card and review days, activities and periods on your phone. Tested on VDO DTCO 4.1a with Android and Chrome.",
     start: "Start 3-day demo", starting: "Starting…", trialError: "The demo is temporarily unavailable. Please try again in a few minutes.", open: "Open app", guide: "Connection guide", installTest: "Install app", installInstructions: "Open this page in Chrome on Android. In the ⋮ menu choose Install app. If Chrome offers only a shortcut, installation is not available in that browser yet.", installUnavailable: "Chrome did not offer an installation prompt. Use the browser menu.", safetyNote: "Safety first: connect and read the driver card only when the vehicle is safely stopped. Do not operate your phone while driving.",
     proofTitle: "Not a promise. Proof from a real vehicle.",
-    proofText: "On a real VDO DTCO 4.1a, TachoCommand completed a Driver Card Slot 1 download through the Smart Tacho 2 Bluetooth path and parsed Gen2 v2 card history.",
-    proof: [["56 days", "of history shown after reading"], ["DTCO 4.1a", "tachograph model tested in a vehicle"]],
+    proofText: "TachoCommand has read a driver card over Bluetooth on three tachographs. The latest read on a VDO DTCO 4.1a was repeated successfully and displayed 56 days, with today first.",
+    proof: [["56 days", "of history shown after reading"], ["3", "tachographs with a confirmed read"]],
     whyKicker: "WHY TACHOCOMMAND", whyTitle: "Drivers do not need another menu. They need an answer.", whyText: "TachoCommand shows confirmed tachograph and card data as a clear history on your phone. The tachograph and card remain authoritative.",
     valueCards: [["01","Read your card","Start a read in the app while stationary and follow the real progress."],["02","Review 56 days","Card days and activities appear in a clear history, newest first."],["03","See LIVE data","Current activity and periods appear when confirmed data is available."],["04","Know what was tested","We name compatibility only for devices and flows tested on physical hardware."]],
     productKicker: "APP OVERVIEW", productTitle: "Read, history, periods.", productText: "Schematic views of app features. Real values appear only after connection and card reading.", productNames: ["LIVE","56 days","Periods"], productDescriptions: ["Current tachograph activity after connection is confirmed.","Card days and activities, newest first.","Daily, weekly and two-week values when data is available."],
@@ -141,7 +141,7 @@ const copy = {
     heroB: "Die letzten 56 Tage ansehen.",
     heroText: "Mit einem unterstützten Tachographen verbinden, die Fahrerkarte auslesen und Tage, Tätigkeiten und Zeiträume am Smartphone ansehen. Mit VDO DTCO 4.1a, Android und Chrome getestet.",
     start: "3-Tage-Demo starten", starting: "Wird gestartet…", trialError: "Die Demo ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.", open: "App öffnen", guide: "Verbindungsanleitung", installTest: "App installieren", installInstructions: "Diese Seite in Chrome auf Android öffnen. Im Menü ⋮ App installieren wählen. Wenn Chrome nur eine Verknüpfung anbietet, ist die Installation in diesem Browser noch nicht verfügbar.", installUnavailable: "Chrome bietet derzeit keinen Installationsdialog an. Browsermenü verwenden.", safetyNote: "Sicherheit zuerst: Smartphone nur bei sicher stehendem Fahrzeug verbinden und die Fahrerkarte auslesen. Telefon während der Fahrt nicht bedienen.",
-    proofTitle: "Kein Versprechen. Nachweis aus einem echten Fahrzeug.", proofText: "TachoCommand hat an einem realen VDO DTCO 4.1a eine Fahrerkarte über Bluetooth ausgelesen und ihren Verlauf angezeigt.", proof: [["56 Tage","Verlauf nach dem Auslesen angezeigt"],["DTCO 4.1a","im Fahrzeug getestetes Tachographenmodell"]],
+    proofTitle: "Im Fahrzeug geprüft, wiederholt bestätigt.", proofText: "TachoCommand hat an drei Tachographen eine Fahrerkarte über Bluetooth ausgelesen. Der letzte Lesevorgang am VDO DTCO 4.1a wurde erfolgreich wiederholt; 56 Tage werden mit dem heutigen Tag zuerst angezeigt.", proof: [["56 Tage","Verlauf nach dem Auslesen angezeigt"],["3","Tachographen mit bestätigtem Lesevorgang"]],
     whyKicker: "WARUM TACHOCOMMAND", whyTitle: "Fahrer brauchen kein weiteres Menü. Sie brauchen eine Antwort.", whyText: "TachoCommand zeigt bestätigte Daten aus Tachograph und Fahrerkarte als übersichtliche Historie am Smartphone. Tachograph und Karte bleiben maßgeblich.",
     valueCards: [["01","Fahrerkarte auslesen","Das Auslesen in der App im Stillstand starten und den tatsächlichen Fortschritt verfolgen."],["02","56 Tage ansehen","Kartentage und Tätigkeiten erscheinen in einer klaren Historie, neueste zuerst."],["03","LIVE-Daten sehen","Aktuelle Tätigkeit und Zeiträume erscheinen, wenn bestätigte Daten vorliegen."],["04","Geprüfte Kompatibilität","Wir nennen nur Geräte und Abläufe, die an echter Hardware getestet wurden."]],
     productKicker: "APP-ÜBERBLICK", productTitle: "Auslesen, Verlauf, Zeiträume.", productText: "Schematische Ansichten der App-Funktionen. Echte Werte erscheinen erst nach Verbindung und Auslesen.", productNames: ["LIVE","56 Tage","Zeiträume"], productDescriptions: ["Aktuelle Tätigkeit nach bestätigter Verbindung.","Kartentage und Tätigkeiten, neueste zuerst.","Tages-, Wochen- und Zweiwochenwerte, wenn Daten vorliegen."],
@@ -196,10 +196,10 @@ export default function LandingPage({ initialLocale = "sr", canonicalLocaleRoute
   return (
     <main className="tcx-shell" data-release={LANDING_RELEASE} lang={locale}>
       <header className="tcx-nav">
-        <a className="tcx-brand" href="#top" aria-label="TachoCommand">
+        <Link className="tcx-brand" href="/app" aria-label={t.open}>
           <span className="tcx-brand-mark">TC</span>
           <strong>Tacho<span>Command</span></strong>
-        </a>
+        </Link>
         <nav className="tcx-nav-links" aria-label={t.language}>
           <a href="#why">{t.nav[0]}</a>
           <a href="#product">{t.nav[1]}</a>
@@ -250,7 +250,7 @@ export default function LandingPage({ initialLocale = "sr", canonicalLocaleRoute
 
       <section className="tcx-proof" aria-labelledby="proof-title">
         <div className="tcx-section-copy tcx-section-copy-wide">
-          <span className="tcx-kicker">{t.tested} · 16. 09. 2026.</span>
+          <span className="tcx-kicker">{t.tested}</span>
           <h2 id="proof-title">{t.proofTitle}</h2>
           <p>{t.proofText}</p>
         </div>
