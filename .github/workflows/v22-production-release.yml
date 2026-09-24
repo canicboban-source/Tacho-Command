@@ -1,0 +1,179 @@
+name: V22 production release with rollback
+on:
+  push:
+    branches:
+      - release/v22-base-20260924
+    paths:
+      - docs/release/v22-promote.marker
+permissions:
+  contents: read
+concurrency:
+  group: tachocommand-production-release
+  cancel-in-progress: false
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: node --test tests/*.test.mjs
+      - run: npm run build
+      - name: Verify production version and identify the real database without changing traffic
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from "node:fs";
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          if (!token || !account) throw new Error("Cloudflare credentials missing");
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(account)}`;
+          async function read(path) {
+            const response = await fetch(base + path, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) throw new Error(`Cloudflare read ${response.status}: ${path}`);
+            const data = await response.json();
+            if (data.success !== true) throw new Error(`Cloudflare read failed: ${path}`);
+            return data.result;
+          }
+          const [databaseResult, deploymentResult] = await Promise.all([
+            read("/d1/database?name=tachocommand-prod"),
+            read("/workers/scripts/tachocommand/deployments"),
+          ]);
+          const databases = Array.isArray(databaseResult) ? databaseResult : databaseResult?.databases;
+          const database = databases?.filter((item) => item.name === "tachocommand-prod");
+          if (database?.length !== 1 || !database[0].uuid) throw new Error("Production D1 identity is ambiguous");
+          const deployments = Array.isArray(deploymentResult) ? deploymentResult : deploymentResult?.deployments;
+          const current = deployments?.[0]?.versions;
+          const oldId = current?.length === 1 && current[0]?.percentage === 100 ? current[0].version_id : null;
+          // Stop if anyone changed production after the recorded read-only audit.
+          if (oldId !== "c0c71562-c697-41fd-b89f-52c2daf1928a") {
+            throw new Error("Production version changed since the V22 audit; release cancelled");
+          }
+          const oldVersion = await read(`/workers/scripts/tachocommand/versions/${oldId}`);
+          const raw = oldVersion?.resources?.bindings;
+          const bindings = Array.isArray(raw) ? raw : Object.values(raw ?? {});
+          const names = new Set(bindings.map((item) => item?.name ?? item?.binding));
+          for (const required of ["DB", "IMAGES", "ADMIN_ACCESS_KEY", "ADMIN_SIGNING_SECRET", "TRIAL_SIGNING_SECRET"]) {
+            if (!names.has(required)) throw new Error(`Existing production binding missing: ${required}`);
+          }
+          const db = bindings.find((item) => (item?.name ?? item?.binding) === "DB");
+          if (db?.id !== database[0].uuid && db?.database_id !== database[0].uuid) {
+            throw new Error("Current production DB points to another database");
+          }
+          appendFileSync(process.env.GITHUB_ENV, `TC_OLD_VERSION=${oldId}\nTC_DB_UUID=${database[0].uuid}\n`);
+          console.log("Production version, database and required binding names verified. No traffic changed.");
+          NODE
+      - name: Replace only the placeholder D1 identity and preserve the Images binding
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "dist/server/wrangler.json";
+          const config = JSON.parse(readFileSync(path, "utf8"));
+          if (config.name !== "tachocommand" || config.d1_databases?.length !== 1
+            || config.d1_databases[0]?.binding !== "DB"
+            || config.d1_databases[0]?.database_id !== "00000000-0000-4000-8000-000000000000") {
+            throw new Error("Generated Worker configuration is not the reviewed production shape");
+          }
+          config.d1_databases = [{
+            binding: "DB", database_name: "tachocommand-prod", database_id: process.env.TC_DB_UUID,
+          }];
+          config.images = { binding: "IMAGES" };
+          delete config.routes;
+          delete config.route;
+          delete config.custom_domains;
+          delete config.zone_id;
+          writeFileSync(path, JSON.stringify(config));
+          NODE
+      - name: Upload a production version without assigning traffic
+        run: |
+          set -euo pipefail
+          npx wrangler versions upload --config dist/server/wrangler.json --keep-vars \
+            --message "V22 field-confirmed release ${GITHUB_SHA}" | tee /tmp/tc-upload.log
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from "node:fs";
+          const text = readFileSync("/tmp/tc-upload.log", "utf8");
+          const id = text.match(/Worker Version ID:\s*([a-f0-9-]{36})/i)?.[1];
+          if (!id) throw new Error("Cannot identify uploaded Worker version");
+          appendFileSync(process.env.GITHUB_ENV, `TC_NEW_VERSION=${id}\n`);
+          console.log("Uploaded V22 version:", id);
+          NODE
+      - name: Verify the uploaded version still has production resources and traffic is still old
+        run: |
+          node --input-type=module <<'NODE'
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
+          async function read(path) {
+            const response = await fetch(base + path, { headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` } });
+            if (!response.ok) throw new Error(`Cloudflare read ${response.status}: ${path}`);
+            const body = await response.json();
+            if (body.success !== true) throw new Error(`Cloudflare read failed: ${path}`);
+            return body.result;
+          }
+          const [version, deploymentResult] = await Promise.all([
+            read(`/workers/scripts/tachocommand/versions/${process.env.TC_NEW_VERSION}`),
+            read("/workers/scripts/tachocommand/deployments"),
+          ]);
+          const raw = version?.resources?.bindings;
+          const bindings = Array.isArray(raw) ? raw : Object.values(raw ?? {});
+          const names = new Set(bindings.map((item) => item?.name ?? item?.binding));
+          for (const required of ["DB", "IMAGES", "ADMIN_ACCESS_KEY", "ADMIN_SIGNING_SECRET", "TRIAL_SIGNING_SECRET"]) {
+            if (!names.has(required)) throw new Error(`Uploaded version lost binding: ${required}`);
+          }
+          const db = bindings.find((item) => (item?.name ?? item?.binding) === "DB");
+          if (db?.id !== process.env.TC_DB_UUID && db?.database_id !== process.env.TC_DB_UUID) {
+            throw new Error("Uploaded version has the wrong production D1 binding");
+          }
+          const deployments = Array.isArray(deploymentResult) ? deploymentResult : deploymentResult?.deployments;
+          const current = deployments?.[0]?.versions;
+          if (current?.length !== 1 || current[0]?.percentage !== 100
+            || current[0].version_id !== process.env.TC_OLD_VERSION) {
+            throw new Error("Production traffic changed during staging");
+          }
+          console.log("New version bindings and unchanged production traffic verified.");
+          NODE
+      - name: Promote V22 and roll back to the recorded version if verification fails
+        run: |
+          set -Eeuo pipefail
+          rollback() {
+            code=$?
+            trap - ERR
+            echo "Promotion failed; returning all traffic to ${TC_OLD_VERSION}"
+            npx wrangler versions deploy "${TC_OLD_VERSION}@100" --name tachocommand --yes \
+              --message "Automatic rollback after failed V22 smoke check" || true
+            exit "$code"
+          }
+          trap rollback ERR
+          npx wrangler versions deploy "${TC_NEW_VERSION}@100" --name tachocommand --yes \
+            --message "V22 verified release ${GITHUB_SHA}"
+          node --input-type=module <<'NODE'
+          const origin = "https://tachocommand.com";
+          for (const path of ["/", "/app", "/manifest.webmanifest", "/sw.js"]) {
+            const response = await fetch(origin + path, { cache: "no-store" });
+            if (!response.ok) throw new Error(`${path} failed: ${response.status}`);
+            if (path === "/" && !(await response.text()).includes("V22.0")) {
+              throw new Error("Landing does not show V22.0");
+            }
+          }
+          const response = await fetch("https://www.tachocommand.com/", { redirect: "follow", cache: "no-store" });
+          if (!response.ok) throw new Error("www domain is unavailable");
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
+          const deployment = await fetch(base + "/workers/scripts/tachocommand/deployments", {
+            headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+          });
+          if (!deployment.ok) throw new Error("Cannot verify production version after deployment");
+          const body = await deployment.json();
+          const results = Array.isArray(body.result) ? body.result : body.result?.deployments;
+          const versions = results?.[0]?.versions;
+          if (versions?.length !== 1 || versions[0].percentage !== 100
+            || versions[0].version_id !== process.env.TC_NEW_VERSION) {
+            throw new Error("V22 did not receive 100% of production traffic");
+          }
+          console.log("V22 production smoke checks and version assignment succeeded.");
+          NODE
+          trap - ERR
