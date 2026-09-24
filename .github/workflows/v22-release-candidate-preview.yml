@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - release/v22-base-20260924
+      - release/1.0.0-beta.2-install-guidance
     paths:
       - .github/workflows/v22-release-candidate-preview.yml
       - app/app-v2/app-v2-client.tsx
