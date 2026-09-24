@@ -16,6 +16,24 @@ const json = (body: unknown, init: ResponseInit = {}) =>
     },
   });
 
+export async function GET() {
+  try {
+    const db = await getDb();
+    await db.select({
+      id: productAnalyticsEvents.id,
+      visitId: productAnalyticsEvents.visitId,
+      event: productAnalyticsEvents.event,
+      surface: productAnalyticsEvents.surface,
+      locale: productAnalyticsEvents.locale,
+      source: productAnalyticsEvents.source,
+      createdAt: productAnalyticsEvents.createdAt,
+    }).from(productAnalyticsEvents).limit(1);
+    return json({ status: "ready" });
+  } catch {
+    return json({ status: "storage_unavailable" }, { status: 503 });
+  }
+}
+
 export async function POST(request: Request) {
   let payload: unknown;
   try {

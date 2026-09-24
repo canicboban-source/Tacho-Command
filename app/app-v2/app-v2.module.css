@@ -8,3 +8,17 @@
   min-height: 100dvh;
   background: #081219;
 }
+
+.savedCardGate {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 18px 20px;
+  border: 1px solid #51778a;
+  border-radius: 18px;
+  background: #112b38;
+  line-height: 1.5;
+}
+.savedCardGate strong { display: block; font-size: 18px; }
+.savedCardGate p { margin: 10px 0; overflow-wrap: anywhere; }
+.savedCardGate small { display: block; margin-top: 10px; color: #a8bfca; }
+.savedCardGate button { padding: 12px 16px; border: 0; border-radius: 10px; background: #43c2df; color: #08202b; font: inherit; font-weight: 750; }

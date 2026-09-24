@@ -9,7 +9,7 @@ const routeSource = fs.readFileSync(
 
 test("telemetry GET probe verifies storage without returning telemetry rows", () => {
   assert.match(routeSource, /export async function GET\(\)/);
-  assert.match(routeSource, /db\.select\(\{ id: technicalTelemetryEvents\.id \}\)\.from\(technicalTelemetryEvents\)\.limit\(1\)/);
+  assert.match(routeSource, /db\.select\(\{[\s\S]*id: technicalTelemetryEvents\.id,[\s\S]*createdAt: technicalTelemetryEvents\.createdAt,[\s\S]*\}\)\.from\(technicalTelemetryEvents\)\.limit\(1\)/);
   assert.match(routeSource, /status:\s*"ready"/);
   assert.match(routeSource, /schema:\s*TECHNICAL_TELEMETRY_SCHEMA/);
   assert.match(routeSource, /retentionDays:\s*TECHNICAL_TELEMETRY_RETENTION_DAYS/);
@@ -20,7 +20,7 @@ test("telemetry GET probe verifies storage without returning telemetry rows", ()
   const getBody = routeSource.slice(getStart, postStart);
   assert.doesNotMatch(getBody, /\.insert\(/);
   assert.doesNotMatch(getBody, /\.delete\(/);
-  assert.doesNotMatch(getBody, /sessionId|deviceFamily|errorCode|durationMs|nrc|did:/);
+  assert.doesNotMatch(getBody.slice(getBody.indexOf("return json({")), /sessionId|deviceFamily|errorCode|durationMs|nrc|did:/);
 });
 
 test("telemetry readiness responses remain non-cacheable", () => {

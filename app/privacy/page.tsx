@@ -13,8 +13,8 @@ export default function PrivacyPage() {
       <h2>Ko je odgovoran i kako da nas kontaktirate</h2>
       <p>Canic Boban, Beim Spitzerriegel 2, 2500 Baden, Austrija. Za pitanja o podacima i zahteve za pristup ili brisanje pišite na <a href="mailto:info@tachocommand.com">info@tachocommand.com</a>.</p>
       <p>TachoCommand trenutno vodi fizičko lice. Kupovina i naplata nisu aktivne.</p>
-      <h2>Demo pristup</h2>
-      <p>TachoCommand postavlja tehnički, HttpOnly kolačić da bi server potpisao početak trodnevnog demo perioda. Kolačić ne sadrži ime, e-mail, broj kartice vozača, registraciju ili lokaciju.</p>
+      <h2>Postojeći demo kolačić</h2>
+      <p>Ako je ranije pokrenut demo, server može čuvati tehnički HttpOnly kolačić za njegov početak. Trenutna beta aplikacija ne ograničava pristup na osnovu tog kolačića. On ne sadrži ime, e-mail, broj kartice vozača, registraciju ili lokaciju.</p>
 
       <h2>Minimalna product analytics</h2>
       <p>Radi razumevanja korišćenja proizvoda beležimo ograničene događaje kao što su otvaranje početne strane ili aplikacije, pokretanje demo pristupa, klik na vodič i izbor jezika. Analitika čuva nasumični identifikator sesije, vrstu događaja, deo proizvoda, jezik, grubu kategoriju izvora posete i vreme prijema na serveru. Identifikator sesije može predstavljati podatak o ličnosti; ne predstavljamo ove događaje kao potpuno anonimne.</p>

@@ -95,7 +95,7 @@ test("PWA opens App V2 while field-test stays separately available", () => {
   assert.equal(manifest.start_url, preview ? "/app?v22-preview" : "/app");
   assert.equal(manifest.short_name, preview ? "TC V22 Test" : "TachoCommand");
   assert.doesNotMatch(manifest.name, /Core Field Test|0\.31|RHMI|0\.16/);
-  assert.match(serviceWorker, /tachocommand-shell-v51-app-beta-3/);
+  assert.match(serviceWorker, /tachocommand-shell-v52-app-beta-4/);
   assert.match(serviceWorker, /caches\.match\("\/"\)/);
   assert.match(appRecovery, /AppV2Client/);
   assert.doesNotMatch(appRecovery, /recovered=031/);

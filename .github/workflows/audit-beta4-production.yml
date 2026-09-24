@@ -1,0 +1,236 @@
+name: Audit beta.4 production release with rollback
+on:
+  push:
+    branches:
+      - release/audit-beta4-20260925
+    paths:
+      - docs/release/audit-beta4-promote.marker
+permissions:
+  contents: read
+concurrency:
+  group: tachocommand-production-release
+  cancel-in-progress: false
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: node --test tests/*.test.mjs
+      - name: Verify all localized legal pages on the isolated preview
+        run: |
+          node --input-type=module <<'NODE'
+          const preview = "https://tachocommand-audit-beta4-preview.canicboban.workers.dev";
+          const names = {
+            sr: { privacy: "Ko je odgovoran i kako da nas kontaktirate", terms: "Uslovi beta korišćenja", impressum: "Odgovoran za sadržaj i kontakt" },
+            en: { privacy: "Who is responsible and how to contact us", terms: "Beta terms of use", impressum: "Responsible for the content and contact" },
+            de: { privacy: "Verantwortliche Person und Kontakt", terms: "Beta-Nutzungsbedingungen", impressum: "Verantwortlich für den Inhalt und Kontakt" },
+          };
+          for (const [locale, documents] of Object.entries(names)) {
+            for (const [document, text] of Object.entries(documents)) {
+              const response = await fetch(`${preview}/${locale}/${document}`, { cache: "no-store" });
+              if (!response.ok || !(await response.text()).includes(text)) {
+                throw new Error(`Preview is not ready: ${locale}/${document}`);
+              }
+            }
+          }
+          NODE
+      - name: Verify production version and identify the real database without changing traffic
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from "node:fs";
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          if (!token || !account) throw new Error("Cloudflare credentials missing");
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(account)}`;
+          async function read(path) {
+            const response = await fetch(base + path, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) throw new Error(`Cloudflare read ${response.status}: ${path}`);
+            const data = await response.json();
+            if (data.success !== true) throw new Error(`Cloudflare read failed: ${path}`);
+            return data.result;
+          }
+          const [databaseResult, deploymentResult] = await Promise.all([
+            read("/d1/database?name=tachocommand-prod"),
+            read("/workers/scripts/tachocommand/deployments"),
+          ]);
+          const databases = Array.isArray(databaseResult) ? databaseResult : databaseResult?.databases;
+          const database = databases?.filter((item) => item.name === "tachocommand-prod");
+          if (database?.length !== 1 || !database[0].uuid) throw new Error("Production D1 identity is ambiguous");
+          const deployments = Array.isArray(deploymentResult) ? deploymentResult : deploymentResult?.deployments;
+          const current = deployments?.[0]?.versions;
+          const oldId = current?.length === 1 && current[0]?.percentage === 100 ? current[0].version_id : null;
+          // Release only from the most recently observed beta.3 production version.
+          if (oldId !== "efa29edc-0c0b-4bab-9bd3-8338c7958e8e") {
+            throw new Error("Production has changed since the beta.3 verification; release cancelled");
+          }
+          const oldVersion = await read(`/workers/scripts/tachocommand/versions/${oldId}`);
+          const raw = oldVersion?.resources?.bindings;
+          const bindings = Array.isArray(raw) ? raw : Object.values(raw ?? {});
+          const names = new Set(bindings.map((item) => item?.name ?? item?.binding));
+          for (const required of ["DB", "IMAGES", "ADMIN_ACCESS_KEY", "ADMIN_SIGNING_SECRET", "TRIAL_SIGNING_SECRET"]) {
+            if (!names.has(required)) throw new Error(`Existing production binding missing: ${required}`);
+          }
+          const db = bindings.find((item) => (item?.name ?? item?.binding) === "DB");
+          if (db?.id !== database[0].uuid && db?.database_id !== database[0].uuid) {
+            throw new Error("Current production DB points to another database");
+          }
+          appendFileSync(process.env.GITHUB_ENV, `TC_OLD_VERSION=${oldId}\nTC_DB_UUID=${database[0].uuid}\n`);
+          console.log("Production version, database and required binding names verified. No traffic changed.");
+          NODE
+      - name: Replace only the placeholder D1 identity and preserve the Images binding
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "dist/server/wrangler.json";
+          const config = JSON.parse(readFileSync(path, "utf8"));
+          if (config.name !== "tachocommand" || config.d1_databases?.length !== 1
+            || config.d1_databases[0]?.binding !== "DB"
+            || config.d1_databases[0]?.database_id !== "00000000-0000-4000-8000-000000000000") {
+            throw new Error("Generated Worker configuration is not the reviewed production shape");
+          }
+          config.d1_databases = [{
+            binding: "DB", database_name: "tachocommand-prod", database_id: process.env.TC_DB_UUID,
+          }];
+          config.images = { binding: "IMAGES" };
+          delete config.routes;
+          delete config.route;
+          delete config.custom_domains;
+          delete config.zone_id;
+          writeFileSync(path, JSON.stringify(config));
+          NODE
+      - name: Upload a production version without assigning traffic
+        run: |
+          set -euo pipefail
+          npx wrangler versions upload --config dist/server/wrangler.json --keep-vars \
+            --message "Audit beta.4 release ${GITHUB_SHA}" | tee /tmp/tc-upload.log
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from "node:fs";
+          const text = readFileSync("/tmp/tc-upload.log", "utf8");
+          const id = text.match(/Worker Version ID:\s*([a-f0-9-]{36})/i)?.[1];
+          if (!id) throw new Error("Cannot identify uploaded Worker version");
+          appendFileSync(process.env.GITHUB_ENV, `TC_NEW_VERSION=${id}\n`);
+          console.log("Uploaded audit beta.4 version:", id);
+          NODE
+      - name: Verify the uploaded version still has production resources and traffic is still old
+        run: |
+          node --input-type=module <<'NODE'
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
+          async function read(path) {
+            const response = await fetch(base + path, { headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` } });
+            if (!response.ok) throw new Error(`Cloudflare read ${response.status}: ${path}`);
+            const body = await response.json();
+            if (body.success !== true) throw new Error(`Cloudflare read failed: ${path}`);
+            return body.result;
+          }
+          const [version, deploymentResult] = await Promise.all([
+            read(`/workers/scripts/tachocommand/versions/${process.env.TC_NEW_VERSION}`),
+            read("/workers/scripts/tachocommand/deployments"),
+          ]);
+          const raw = version?.resources?.bindings;
+          const bindings = Array.isArray(raw) ? raw : Object.values(raw ?? {});
+          const names = new Set(bindings.map((item) => item?.name ?? item?.binding));
+          for (const required of ["DB", "IMAGES", "ADMIN_ACCESS_KEY", "ADMIN_SIGNING_SECRET", "TRIAL_SIGNING_SECRET"]) {
+            if (!names.has(required)) throw new Error(`Uploaded version lost binding: ${required}`);
+          }
+          const db = bindings.find((item) => (item?.name ?? item?.binding) === "DB");
+          if (db?.id !== process.env.TC_DB_UUID && db?.database_id !== process.env.TC_DB_UUID) {
+            throw new Error("Uploaded version has the wrong production D1 binding");
+          }
+          const deployments = Array.isArray(deploymentResult) ? deploymentResult : deploymentResult?.deployments;
+          const current = deployments?.[0]?.versions;
+          if (current?.length !== 1 || current[0]?.percentage !== 100
+            || current[0].version_id !== process.env.TC_OLD_VERSION) {
+            throw new Error("Production traffic changed during staging");
+          }
+          console.log("New version bindings and unchanged production traffic verified.");
+          NODE
+      - name: Promote audit beta.4 and roll back to the recorded version if verification fails
+        run: |
+          set -Eeuo pipefail
+          rollback() {
+            code=$?
+            trap - ERR
+            echo "Promotion failed; returning all traffic to ${TC_OLD_VERSION}"
+            npx wrangler versions deploy "${TC_OLD_VERSION}@100" --name tachocommand --yes \
+              --message "Automatic rollback after failed audit beta.4 smoke check" || true
+            exit "$code"
+          }
+          trap rollback ERR
+          npx wrangler versions deploy "${TC_NEW_VERSION}@100" --name tachocommand --yes \
+            --message "Audit beta.4 verified release ${GITHUB_SHA}"
+          node --input-type=module <<'NODE'
+          const origin = "https://tachocommand.com";
+          let landingReady = false;
+          for (let attempt = 0; attempt < 12; attempt++) {
+            const response = await fetch(origin + "/", { cache: "no-store" });
+            if (response.ok && (await response.text()).includes("1.0.0-beta.4")) {
+              landingReady = true;
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+          if (!landingReady) throw new Error("Landing does not show the expected beta version");
+          for (const path of ["/", "/app", "/manifest.webmanifest", "/sw.js", "/privacy", "/terms", "/impressum"]) {
+            const response = await fetch(origin + path, { cache: "no-store" });
+            if (!response.ok) throw new Error(`${path} failed: ${response.status}`);
+            const body = path === "/" || path === "/privacy" || path === "/impressum" ? await response.text() : "";
+            if ((path === "/privacy" || path === "/impressum") && !body.includes("info@tachocommand.com")) {
+              throw new Error(`${path} lacks publisher contact`);
+            }
+          }
+          for (const path of ["/api/product-analytics", "/api/technical-telemetry"]) {
+            const response = await fetch(origin + path, { cache: "no-store" });
+            if (!response.ok || (await response.json()).status !== "ready") {
+              throw new Error(`${path} storage schema is not ready`);
+            }
+          }
+          for (const appOrigin of [origin, "https://www.tachocommand.com"]) {
+            const response = await fetch(appOrigin + "/", { redirect: "follow", cache: "no-store" });
+            if (!response.ok) throw new Error(`${appOrigin} is unavailable`);
+            const html = await response.text();
+            if (!/<link rel="manifest" href="\/manifest\.webmanifest"\s*\/>/.test(html)) {
+              throw new Error(`${appOrigin} advertises a cross-origin install manifest`);
+            }
+          }
+          const legalNames = {
+            sr: { privacy: "Ko je odgovoran i kako da nas kontaktirate", terms: "Uslovi beta korišćenja", impressum: "Odgovoran za sadržaj i kontakt" },
+            en: { privacy: "Who is responsible and how to contact us", terms: "Beta terms of use", impressum: "Responsible for the content and contact" },
+            de: { privacy: "Verantwortliche Person und Kontakt", terms: "Beta-Nutzungsbedingungen", impressum: "Verantwortlich für den Inhalt und Kontakt" },
+          };
+          for (const appOrigin of [origin, "https://www.tachocommand.com"]) {
+            for (const [locale, documents] of Object.entries(legalNames)) {
+              for (const [document, expected] of Object.entries(documents)) {
+                const response = await fetch(`${appOrigin}/${locale}/${document}`, { redirect: "follow", cache: "no-store" });
+                if (!response.ok || !(await response.text()).includes(expected)) {
+                  throw new Error(`Localized page failed: ${appOrigin}/${locale}/${document}`);
+                }
+              }
+            }
+          }
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
+          const deployment = await fetch(base + "/workers/scripts/tachocommand/deployments", {
+            headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+          });
+          if (!deployment.ok) throw new Error("Cannot verify production version after deployment");
+          const body = await deployment.json();
+          const results = Array.isArray(body.result) ? body.result : body.result?.deployments;
+          const versions = results?.[0]?.versions;
+          if (versions?.length !== 1 || versions[0].percentage !== 100
+            || versions[0].version_id !== process.env.TC_NEW_VERSION) {
+            throw new Error("Audit beta.4 release did not receive 100% of production traffic");
+          }
+          console.log("Legal locale production smoke checks and version assignment succeeded.");
+          NODE
+          node scripts/ensure-retention-schedule.mjs
+          trap - ERR

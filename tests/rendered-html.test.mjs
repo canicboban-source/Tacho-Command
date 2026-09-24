@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import test from "node:test";
 
 const productionVersionMeta =
-  /<meta(?=[^>]*\bname=["']application-version["'])(?=[^>]*\bcontent=["']1\.0\.0-beta\.3["'])[^>]*>/i;
+  /<meta(?=[^>]*\bname=["']application-version["'])(?=[^>]*\bcontent=["']1\.0\.0-beta\.4["'])[^>]*>/i;
 
 test("renders the tagged beta production candidate metadata", async (t) => {
   const workerFile = new URL("../dist/server/index.js", import.meta.url);

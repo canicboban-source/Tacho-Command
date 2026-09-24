@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import TrialLauncher from "./trial-launcher";
 import PwaInstallCta from "./pwa-install-cta";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
 import { formatTachoCommandVersionLine, TACHOCOMMAND_VERSIONS } from "../lib/product-version.js";
@@ -24,7 +23,7 @@ const copy = {
     heroA: "Očitaj karticu telefonom.",
     heroB: "Pregledaj poslednjih 56 dana.",
     heroText: "Poveži se sa podržanim tahografom, očitaj vozačku karticu i pregledaj dane, aktivnosti i periode na telefonu. Testirano na VDO DTCO 4.1a uz Android i Chrome.",
-    start: "Pokreni 3-dnevni demo",
+    start: "Otvori beta aplikaciju",
     starting: "Pokrećem…",
     trialError: "Demo trenutno nije dostupan. Pokušaj ponovo za nekoliko minuta.",
     open: "Otvori aplikaciju",
@@ -95,8 +94,8 @@ const copy = {
     plannedItems: ["iPhone i Safari", "Drugi modeli tahografa bez terenske provere", "Potpuna provera digitalnog potpisa u aplikaciji"],
     priceKicker: "BETA",
     priceTitle: "Prvo dokaz. Onda naplata.",
-    priceText: "Beta i demo su dostupni za proveru proizvoda. Kupovina se otvara tek nakon posebne odluke i provere javnog izdanja.",
-    priceBullets: ["3 dana probnog pristupa bez platne kartice", "Početna stranica na srpskom, engleskom i nemačkom", "Očitavanje kartice na proverenim uređajima"],
+    priceText: "Beta aplikacija je trenutno dostupna bez kupovine. Naplata se otvara tek nakon posebne odluke i provere javnog izdanja.",
+    priceBullets: ["Beta pristup bez platne kartice", "Početna stranica na srpskom, engleskom i nemačkom", "Očitavanje kartice na proverenim uređajima"],
     locked: "Kupovina se otvara nakon bete",
     once: "JEDNOM",
     faqTitle: "Pitanja koja početnik stvarno postavlja.",
@@ -120,7 +119,7 @@ const copy = {
     heroA: "Read your driver card on your phone.",
     heroB: "See the last 56 days.",
     heroText: "Connect to a supported tachograph, read your driver card and review days, activities and periods on your phone. Tested on VDO DTCO 4.1a with Android and Chrome.",
-    start: "Start 3-day demo", starting: "Starting…", trialError: "The demo is temporarily unavailable. Please try again in a few minutes.", open: "Open app", guide: "Connection guide", installTest: "Install app", installInstructions: "Open this page in Chrome on Android. In the ⋮ menu choose Install app. If Chrome offers only a shortcut, installation is not available in that browser yet.", installUnavailable: "Chrome did not offer an installation prompt. Use the browser menu.", safetyNote: "Safety first: connect and read the driver card only when the vehicle is safely stopped. Do not operate your phone while driving.",
+    start: "Open beta app", starting: "Starting…", trialError: "The beta is temporarily unavailable. Please try again in a few minutes.", open: "Open app", guide: "Connection guide", installTest: "Install app", installInstructions: "Open this page in Chrome on Android. In the ⋮ menu choose Install app. If Chrome offers only a shortcut, installation is not available in that browser yet.", installUnavailable: "Chrome did not offer an installation prompt. Use the browser menu.", safetyNote: "Safety first: connect and read the driver card only when the vehicle is safely stopped. Do not operate your phone while driving.",
     alreadyInstalled: "Existing TachoCommand icon", installedHelp: "Open the TC icon on your phone. If it opens the landing page, tap ‘Open app’. Chrome detecting an icon does not confirm the app starts correctly. Keep your saved data.", noPromptHelp: "Chrome has not offered an install prompt. If the menu shows ‘Open TachoCommand’, try the existing TC icon. If it opens the landing page, tap ‘Open app’. Do not clear app data to update.", closeInstall: "Got it",
     proofTitle: "Not a promise. Proof from a real vehicle.",
     proofText: "TachoCommand has read a driver card over Bluetooth on three tachographs. The latest read on a VDO DTCO 4.1a was repeated successfully and displayed 56 days, with today first.",
@@ -135,7 +134,7 @@ const copy = {
     compatibilityKicker: "COMPATIBILITY", compatibilityTitle: "We only claim what we have actually proven.", tested: "FIELD TESTED", planned: "PLANNED / NOT YET CLAIMED", testedItems: ["Continental VDO DTCO 4.1a","Smart Tacho 2 BLE Download path","Android + Chrome + HTTPS","Gen2 v2 Driver Card Slot 1 download","56-day activity parsing"], plannedItems: ["iPhone / Safari Web Bluetooth path","Other Smart Tacho 2 models without field tests","Full cryptographic signature validation in UI","Additional national rule packs"],
     heroPreview: ["CARD", "Read the last 56 days", "TACHOGRAPH", "Connect tachograph", "Illustration · no real data"],
     periodPreview: ["TODAY", "THIS WEEK", "TWO WEEKS"],
-    priceKicker: "BETA", priceTitle: "Proof first. Payment later.", priceText: "The beta and demo let you explore the product. Checkout opens only after a separate public-release decision and review.", priceBullets: ["3-day demo without payment card","Landing in Serbian, English and German","Card reading on confirmed devices"], locked: "Checkout opens after beta", once: "ONCE",
+    priceKicker: "BETA", priceTitle: "Proof first. Payment later.", priceText: "The beta app is currently available without a purchase. Checkout opens only after a separate public-release decision and review.", priceBullets: ["Beta access without a payment card","Landing in Serbian, English and German","Card reading on confirmed devices"], locked: "Checkout opens after beta", once: "ONCE",
     faqTitle: "Questions beginners actually ask.", faqs: [["Does TachoCommand modify the tachograph?","No. The proven card-download path reads data through the supported Smart Tacho 2 communication path. The tachograph and card remain authoritative."],["Do I need to be technical?","No. Pairing, PIN confirmation, device selection and card reading are guided step by step."],["Does the app make legal decisions?","No. It displays available read data; the tachograph, card and applicable rules remain authoritative."],["How do I find the tachograph?","Open the app and tap “Connect tachograph” first. In field tests the app found a DTCO even when it was absent from Android's Bluetooth list."],["Do my raw card files go to GitHub?","No. The personal .ddd field fixture is not committed; tests use synthetic data."]],
     footer: "TachoCommand helps drivers review data read from their card. The tachograph and card remain the authoritative sources.", trustline: ["VDO DTCO 4.1a", "Card read", "56-day view"], pairing: ["Connect to the tachograph", "Enable pairing", "Then open the app", "Phone", "Connect tachograph", "If a confirmation number appears, check that it matches on your phone and tachograph."], troubleshooting: "CONNECTION HELP", language: "Language", legal: { privacy: "Privacy", terms: "Terms", impressum: "Imprint" },
   },
@@ -145,7 +144,7 @@ const copy = {
     heroA: "Fahrerkarte mit dem Smartphone auslesen.",
     heroB: "Die letzten 56 Tage ansehen.",
     heroText: "Mit einem unterstützten Tachographen verbinden, die Fahrerkarte auslesen und Tage, Tätigkeiten und Zeiträume am Smartphone ansehen. Mit VDO DTCO 4.1a, Android und Chrome getestet.",
-    start: "3-Tage-Demo starten", starting: "Wird gestartet…", trialError: "Die Demo ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.", open: "App öffnen", guide: "Verbindungsanleitung", installTest: "App installieren", installInstructions: "Diese Seite in Chrome auf Android öffnen. Im Menü ⋮ App installieren wählen. Wenn Chrome nur eine Verknüpfung anbietet, ist die Installation in diesem Browser noch nicht verfügbar.", installUnavailable: "Chrome bietet derzeit keinen Installationsdialog an. Browsermenü verwenden.", safetyNote: "Sicherheit zuerst: Smartphone nur bei sicher stehendem Fahrzeug verbinden und die Fahrerkarte auslesen. Telefon während der Fahrt nicht bedienen.",
+    start: "Beta-App öffnen", starting: "Wird gestartet…", trialError: "Die Beta ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.", open: "App öffnen", guide: "Verbindungsanleitung", installTest: "App installieren", installInstructions: "Diese Seite in Chrome auf Android öffnen. Im Menü ⋮ App installieren wählen. Wenn Chrome nur eine Verknüpfung anbietet, ist die Installation in diesem Browser noch nicht verfügbar.", installUnavailable: "Chrome bietet derzeit keinen Installationsdialog an. Browsermenü verwenden.", safetyNote: "Sicherheit zuerst: Smartphone nur bei sicher stehendem Fahrzeug verbinden und die Fahrerkarte auslesen. Telefon während der Fahrt nicht bedienen.",
     alreadyInstalled: "Vorhandenes TachoCommand-Symbol", installedHelp: "TC-Symbol auf dem Smartphone öffnen. Führt es zur Startseite, ‘App öffnen’ antippen. Dass Chrome ein Symbol erkennt, bestätigt noch keinen korrekten App-Start. Gespeicherte Daten nicht löschen.", noPromptHelp: "Chrome bietet keinen Installationsdialog an. Wenn das Menü ‘Open TachoCommand’ zeigt, das vorhandene TC-Symbol versuchen. Führt es zur Startseite, ‘App öffnen’ antippen. App-Daten nicht löschen.", closeInstall: "Verstanden",
     proofTitle: "Im Fahrzeug geprüft, wiederholt bestätigt.", proofText: "TachoCommand hat an drei Tachographen eine Fahrerkarte über Bluetooth ausgelesen. Der letzte Lesevorgang am VDO DTCO 4.1a wurde erfolgreich wiederholt; 56 Tage werden mit dem heutigen Tag zuerst angezeigt.", proof: [["56 Tage","Verlauf nach dem Auslesen angezeigt"],["3","Tachographen mit bestätigtem Lesevorgang"]],
     whyKicker: "WARUM TACHOCOMMAND", whyTitle: "Fahrer brauchen kein weiteres Menü. Sie brauchen eine Antwort.", whyText: "TachoCommand zeigt bestätigte Daten aus Tachograph und Fahrerkarte als übersichtliche Historie am Smartphone. Tachograph und Karte bleiben maßgeblich.",
@@ -158,7 +157,7 @@ const copy = {
     compatibilityKicker: "KOMPATIBILITÄT", compatibilityTitle: "Wir behaupten nur, was wir wirklich nachgewiesen haben.", tested: "IM FELD GETESTET", planned: "GEPLANT / NOCH NICHT BESTÄTIGT", testedItems: ["Continental VDO DTCO 4.1a","Smart Tacho 2 BLE Download-Pfad","Android + Chrome + HTTPS","Gen2 v2 Fahrerkarte Slot 1 Download","56-Tage-Aktivitätsparser"], plannedItems: ["iPhone / Safari Web-Bluetooth-Pfad","Andere Smart-Tacho-2-Modelle ohne Feldtest","Vollständige kryptografische Signaturprüfung in der UI","Weitere nationale Regelprofile"],
     heroPreview: ["KARTE", "Die letzten 56 Tage auslesen", "TACHOGRAPH", "Tachograph verbinden", "Illustration · keine echten Daten"],
     periodPreview: ["HEUTE", "DIESE WOCHE", "ZWEI WOCHEN"],
-    priceKicker: "BETA", priceTitle: "Erst beweisen. Dann bezahlen.", priceText: "Beta und Demo ermöglichen eine Produktprüfung. Checkout öffnet erst nach einer eigenen Entscheidung und Prüfung für die öffentliche Version.", priceBullets: ["3 Tage Demo ohne Zahlungskarte","Landing auf Serbisch, Englisch und Deutsch","Kartenlesen an bestätigten Geräten"], locked: "Checkout öffnet nach der Beta", once: "EINMALIG",
+    priceKicker: "BETA", priceTitle: "Erst beweisen. Dann bezahlen.", priceText: "Die Beta-App ist derzeit ohne Kauf verfügbar. Der Checkout öffnet erst nach einer gesonderten Entscheidung und Prüfung für die öffentliche Version.", priceBullets: ["Beta-Zugang ohne Zahlungskarte","Landing auf Serbisch, Englisch und Deutsch","Kartenlesen an bestätigten Geräten"], locked: "Checkout öffnet nach der Beta", once: "EINMALIG",
     faqTitle: "Fragen, die Einsteiger wirklich stellen.", faqs: [["Verändert TachoCommand den Tachographen?","Nein. Der bestätigte Kartendownload liest Daten über den unterstützten Smart-Tacho-2-Kommunikationsweg."],["Muss ich technisch sein?","Nein. Pairing, PIN-Bestätigung, Geräteauswahl und Auslesen werden Schritt für Schritt erklärt."],["Fällt die App rechtliche Entscheidungen?","Nein. Sie zeigt verfügbare gelesene Daten; Tachograph, Karte und geltende Regeln bleiben maßgeblich."],["Wie finde ich den Tachographen?","Zuerst die App öffnen und „Tachograph verbinden“ antippen. In Feldtests fand die App einen DTCO auch dann, wenn er nicht in der Android-Bluetooth-Liste erschien."],["Gehen meine Kartendaten zu GitHub?","Nein. Die persönliche .ddd-Datei wird nicht committed; Tests nutzen synthetische Daten."]],
     footer: "TachoCommand hilft Fahrern, ausgelesene Daten anzusehen. Tachograph und Fahrerkarte bleiben maßgebliche Quellen.", trustline: ["VDO DTCO 4.1a", "Karte ausgelesen", "56-Tage-Ansicht"], pairing: ["Mit dem Tachographen verbinden", "Kopplung aktivieren", "Dann die App öffnen", "Smartphone", "Tachograph verbinden", "Falls eine Bestätigungsnummer erscheint, muss sie auf Smartphone und Tachograph übereinstimmen."], troubleshooting: "HILFE BEIM VERBINDEN", language: "Sprache", legal: { privacy: "Datenschutz", terms: "Bedingungen", impressum: "Impressum" },
   },
@@ -350,7 +349,7 @@ export default function LandingPage({ initialLocale = "sr", canonicalLocaleRoute
           <ul>{t.priceBullets.map((item) => <li key={item}>✓ {item}</li>)}</ul>
           <p className="tcx-beta-status">{t.locked}</p>
         </div>
-        <div className="tcx-demo-card"><h3>{t.start}</h3><p>{t.heroText}</p><TrialLauncher label={t.start} loadingLabel={t.starting} errorLabel={t.trialError} className="tcx-secondary tcx-demo-button" /></div>
+        <div className="tcx-demo-card"><h3>{t.start}</h3><p>{t.heroText}</p><Link href="/app" className="tcx-secondary tcx-demo-button">{t.start}</Link></div>
       </section>
 
       <section className="tcx-faq" id="faq">
