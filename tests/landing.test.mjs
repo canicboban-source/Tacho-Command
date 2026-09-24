@@ -94,3 +94,8 @@ test("landing explains Chrome's Open TachoCommand menu without asking to delete 
   assert.match(installCta, /appinstalled/);
   assert.match(installCta, /role="dialog"/);
 });
+
+test("older standalone landing shortcuts open the real app without redirecting normal Chrome tabs", () => {
+  assert.match(landing, /matchMedia\("\(display-mode: standalone\)"\)\.matches && window\.location\.pathname === "\/"/);
+  assert.match(landing, /window\.location\.replace\("\/app"\)/);
+});
