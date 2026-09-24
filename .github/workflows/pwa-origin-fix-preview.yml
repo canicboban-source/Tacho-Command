@@ -88,7 +88,7 @@ jobs:
           let root = "";
           for (let attempt = 0; attempt < 12; attempt++) {
             root = await (await read("/")).text();
-            if (root.includes("1.0.0-beta.2") && root.includes("manifest.webmanifest")) break;
+            if (root.includes("1.0.0-beta.3") && root.includes("manifest.webmanifest")) break;
             if (attempt === 11) throw new Error("Preview landing lacks beta identity or manifest");
             await new Promise((resolve) => setTimeout(resolve, 3000));
           }
@@ -105,7 +105,7 @@ jobs:
               || manifest.short_name !== "TachoCommand" || manifest.display !== "standalone") {
             throw new Error("Wrong beta app identity on preview");
           }
-          console.log("TachoCommand 1.0.0-beta.2 candidate verified:", origin);
+          console.log("TachoCommand 1.0.0-beta.3 candidate verified:", origin);
           NODE
       - name: Verify Chrome reads its own manifest and icons on the preview origin
         run: |

@@ -4,7 +4,7 @@ on:
     branches:
       - release/v22-base-20260924
     paths:
-      - docs/release/v22-promote-beta2.marker
+      - docs/release/v22-promote-beta3.marker
 permissions:
   contents: read
 concurrency:
@@ -53,7 +53,7 @@ jobs:
           const current = deployments?.[0]?.versions;
           const oldId = current?.length === 1 && current[0]?.percentage === 100 ? current[0].version_id : null;
           // Stop if anyone changed production after the recorded read-only audit.
-          if (oldId !== "e15960ee-9a42-4512-9de6-042c8be7da5d") {
+          if (oldId !== "2cca28a9-6fca-4483-aa8c-3140c318dc9f") {
             throw new Error("Production version changed since the V22 audit; release cancelled");
           }
           const oldVersion = await read(`/workers/scripts/tachocommand/versions/${oldId}`);
@@ -156,7 +156,7 @@ jobs:
           let landingReady = false;
           for (let attempt = 0; attempt < 12; attempt++) {
             const response = await fetch(origin + "/", { cache: "no-store" });
-            if (response.ok && (await response.text()).includes("1.0.0-beta.2")) {
+            if (response.ok && (await response.text()).includes("1.0.0-beta.3")) {
               landingReady = true;
               break;
             }
