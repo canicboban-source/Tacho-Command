@@ -12,6 +12,7 @@ export default function PrivacyPage() {
     <LegalPage kicker="BETA" title="Privatnost" updated="Ažurirano 24. septembra 2026.">
       <h2>Ko je odgovoran i kako da nas kontaktirate</h2>
       <p>Canic Boban, Beim Spitzerriegel 2, 2500 Baden, Austrija. Za pitanja o podacima i zahteve za pristup ili brisanje pišite na <a href="mailto:info@tachocommand.com">info@tachocommand.com</a>.</p>
+      <p>TachoCommand trenutno vodi fizičko lice. Kupovina i naplata nisu aktivne.</p>
       <h2>Demo pristup</h2>
       <p>TachoCommand postavlja tehnički, HttpOnly kolačić da bi server potpisao početak trodnevnog demo perioda. Kolačić ne sadrži ime, e-mail, broj kartice vozača, registraciju ili lokaciju.</p>
 
@@ -30,10 +31,12 @@ export default function PrivacyPage() {
 
       <h2>Hosting i svrha obrade</h2>
       <p>Sajt i ograničena tehnička evidencija rade preko Cloudflare infrastrukture. Kolačić za demo služi da sačuva početak probnog pristupa; analitika služi merenju upotrebe proizvoda; tehnička telemetrija služi otkrivanju i rešavanju grešaka. Jezički izbor se čuva u pregledaču. Podaci sa kartice prikazuju se na telefonu i lokalni prikaz može ostati sačuvan u pregledaču.</p>
+      <h2>Pravni osnovi</h2>
+      <p>Demo pristup i prikaz podataka koje korisnik sam očita potrebni su za pružanje probne usluge na njegov zahtev (član 6 stav 1 tačka b GDPR). Ograničenu analitiku upotrebe i tehničku telemetriju obrađujemo radi opravdanog interesa da proverimo rad beta verzije i otklonimo greške (član 6 stav 1 tačka f GDPR); podatke ograničavamo na gore navedena tehnička polja. Ako se protivite ovoj obradi, pišite na navedenu adresu.</p>
+      <p>Cloudflare pruža hosting sajta i serverskog dela aplikacije. Podaci u lokalnom prikazu kartice ostaju u pregledaču dok ih korisnik ne obriše; za evidenciju analitike i telemetrije važe gore navedeni rokovi.</p>
       <h2>Vaša prava</h2>
-      <p>Možete zatražiti informacije o obradi, pristup, ispravku, brisanje ili ograničenje obrade i uložiti prigovor putem navedene e-pošte. Imate pravo da podnesete pritužbu nadležnom organu za zaštitu podataka. Brisanjem podataka ovog sajta u pregledaču uklanjate lokalno sačuvani prikaz kartice i izbor jezika.</p>
-      <h2>Pravna provera</h2>
-      <p>Pre otvaranja prodaje dodatno proveravamo pravne osnove obrade, prenos podataka i podatke o primaocima. Za pitanja o konkretnom podatku pišite nam na navedenu adresu.</p>
+      <p>Možete zatražiti informacije o obradi, pristup, ispravku, brisanje ili ograničenje obrade, uložiti prigovor i zatražiti prenosivost tamo gde je primenljiva, putem navedene e-pošte. Imate pravo da podnesete pritužbu nadležnom organu za zaštitu podataka. Brisanjem podataka ovog sajta u pregledaču uklanjate lokalno sačuvani prikaz kartice i izbor jezika.</p>
+      <p>Demo pristup je dobrovoljan. Bez neophodnog tehničkog kolačića server ne može da potvrdi trajanje demo perioda. Na osnovu evidencije analitike i telemetrije ne donosimo automatske odluke o korisnicima.</p>
     </LegalPage>
   );
 }

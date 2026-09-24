@@ -14,8 +14,8 @@ export default function ImpressumPage() {
       <p>Canic Boban<br />Beim Spitzerriegel 2<br />2500 Baden<br />Austrija</p>
       <p>E-pošta: <a href="mailto:info@tachocommand.com">info@tachocommand.com</a></p>
       <h2>Status usluge</h2>
-      <p>TachoCommand je u beta periodu. Kupovina i naplata putem ovog sajta trenutno nisu dostupne.</p>
-      <p>Podaci o eventualnoj registraciji delatnosti, nadležnom organu i poreskom identifikatoru biće dodati ako su primenljivi, pre otvaranja prodaje.</p>
+      <p>Projekat trenutno vodi fizičko lice. TachoCommand je u beta periodu; kupovina i naplata putem ovog sajta nisu dostupne.</p>
+      <p>Podaci o registrovanoj delatnosti biće dopunjeni ako se status projekta promeni pre otvaranja prodaje.</p>
     </LegalPage>
   );
 }
