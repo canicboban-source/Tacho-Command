@@ -47,6 +47,7 @@ export default function AppV2Client() {
   const [lastLiveSnapshot, setLastLiveSnapshot] = useState<Readonly<Record<string, unknown>> | null>(null);
   const [cardSession, setCardSession] = useState(() => createAppV2CardSession());
   const [cardReadProgress, setCardReadProgress] = useState<CardReadProgress | null>(null);
+  const [cardReadOutcome, setCardReadOutcome] = useState<string | null>(null);
   const [phoneZoneKey, setPhoneZoneKey] = useState<string | null>(null);
   const [cardTelemetry, setCardTelemetry] = useState<{ status: string; attemptCode: string | null } | null>(null);
 
@@ -178,6 +179,7 @@ export default function AppV2Client() {
     const readingSession = beginAppV2CardRead(cardSession);
     setCardSession(readingSession);
     setCardReadProgress(Object.freeze({ submessages: 0, byteLength: 0, complete: false }));
+    setCardReadOutcome(null);
     setCardTelemetry(null);
 
     const result = await runBrowserAppV2GoldenCardRead({
@@ -188,6 +190,7 @@ export default function AppV2Client() {
     });
 
     if (result.session) setCardSession(result.session);
+    setCardReadOutcome(result.status);
 
     // The card session is already complete; telemetry cannot alter the read result.
     void reportAppV2CardReadOutcome({ status: result.status }).then((report) => {
@@ -221,6 +224,8 @@ export default function AppV2Client() {
             restoredLabel,
             errorText: cardSession.errorText ?? liveSession.errorText ?? null,
             cardReadProgress,
+            cardReadPhase: cardSession.phase,
+            cardReadOutcome,
             cardTelemetry,
             phoneTimeLabel: phoneZoneKey ? phoneZoneKey.split("|")[0] + " · " + phoneZoneKey.split("|")[1] : null,
             versionLine: formatTachoCommandVersionLine(),

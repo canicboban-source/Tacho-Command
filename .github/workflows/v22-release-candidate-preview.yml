@@ -5,6 +5,9 @@ on:
       - release/v22-base-20260924
     paths:
       - .github/workflows/v22-release-candidate-preview.yml
+      - app/app-v2/app-v2-client.tsx
+      - app/app/field-proven-premium-ui.tsx
+      - tests/field-proven-premium-ui.test.mjs
 permissions:
   contents: read
 concurrency:

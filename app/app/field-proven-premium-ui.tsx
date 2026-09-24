@@ -16,6 +16,8 @@ type ProductControls = Readonly<{
     byteLength: number;
     complete: boolean;
   }> | null;
+  cardReadPhase: "idle" | "reading" | "accepted" | "error";
+  cardReadOutcome: string | null;
   cardTelemetry: Readonly<{ status: string; attemptCode: string | null }> | null;
   versionLine: string;
   phoneTimeLabel: string | null;
@@ -81,13 +83,16 @@ function segmentContext(day: FieldProvenHistoryDay, segment: FieldProvenHistoryS
 }
 
 function IdentityHeader({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
+  const previousCard = controls.cardReadPhase === "error" || controls.cardReadPhase === "reading";
   const headerStatus = controls.phase === "card-reading"
     ? "OČITAVANJE"
     : controls.phase === "connecting"
       ? "POVEZIVANJE"
+      : controls.cardReadPhase === "error"
+        ? "PROVERI KARTICU"
       : state.live
         ? "LIVE"
-        : controls.cardReadProgress?.complete || state.liveSnapshotAvailable
+        : state.cardReadComplete || state.liveSnapshotAvailable
           ? "SAČUVANO"
           : "OFFLINE";
   const activeStatus = headerStatus !== "OFFLINE";
@@ -111,8 +116,8 @@ function IdentityHeader({ state, controls }: Readonly<{ state: FieldProvenProduc
       <section className={styles.identityStrip}>
         <div>
           <span className={styles.identityLabel}>KARTICA</span>
-          <strong>{state.cardReadComplete ? "Kartica očitana" : state.slotLabel ?? "Čeka očitavanje"}</strong>
-          <small>{state.cardReadComplete ? "Očitana i sačuvana lokalno" : "Kartica još nije očitana"}</small>
+          <strong>{previousCard && state.cardReadComplete ? "Prethodno sačuvana kartica" : state.cardReadComplete ? "Kartica očitana" : state.slotLabel ?? "Čeka očitavanje"}</strong>
+          <small>{previousCard ? "Novo očitavanje još nije potvrđeno" : state.cardReadComplete ? "Očitana i sačuvana lokalno" : "Kartica još nije očitana"}</small>
         </div>
         <div>
           <span className={styles.identityLabel}>TAHOGRAF</span>
@@ -151,7 +156,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
             {controls.phase === "connecting" && "Povezivanje i LIVE očitavanje…"}
             {controls.phase === "card-reading" && "Sačekajte završetak očitavanja kartice"}
             {controls.phase === "connected" && "LIVE podaci su sačuvani"}
-            {controls.phase === "error" && "LIVE očitavanje nije završeno"}
+            {controls.phase === "error" && (controls.cardReadPhase === "error" ? "Novo očitavanje kartice nije potvrđeno" : "LIVE očitavanje nije završeno")}
             {controls.phase === "idle" && "Poveži tahograf za LIVE podatke"}
           </strong>
           {controls.errorText ? <small>{controls.errorText}</small> : null}
@@ -223,10 +228,12 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
           <strong>
             {controls.phase === "card-reading"
               ? "Očitavanje kartice je u toku…"
-              : cardProgress?.complete
-                ? "Očitavanje kartice je završeno"
+              : controls.cardReadPhase === "error"
+                ? "Prenos nije potvrdio novu karticu"
+                : controls.cardReadPhase === "accepted"
+                  ? "Nova kartica je sačuvana"
                 : state.cardReadComplete
-                  ? "Kartica je sačuvana lokalno"
+                  ? "Prethodna kartica je sačuvana lokalno"
                   : "Očitaj poslednjih 56 dana"}
           </strong>
           {cardProgress ? (
@@ -235,11 +242,13 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
                 <span>Paketi: {cardProgress.submessages}</span>
                 <span>Preuzeto: {(cardProgress.byteLength / 1000).toLocaleString("sr-RS", { maximumFractionDigits: 1 })} KB</span>
               </div>
-              <div className={styles.cardTransferTrack} aria-label={cardProgress.complete ? "Očitavanje kartice je završeno" : "Količina primljenih podataka raste tokom očitavanja"}>
+              <div className={styles.cardTransferTrack} aria-label={cardProgress.complete ? "Prenos podataka je završen; čeka se potvrda kartice" : "Količina primljenih podataka raste tokom očitavanja"}>
                 <span style={{ width: String(cardVisualProgress) + "%" }} />
               </div>
             </div>
-          ) : state.cardReadComplete ? <small>{state.historyDaysAvailable}/56 dana sačuvano</small> : null}
+          ) : state.cardReadComplete ? <small>{state.historyDaysAvailable}/56 dana prethodno sačuvano</small> : null}
+          {controls.cardReadPhase === "error" ? <small>Nova kartica nije potvrđena. Kod: {controls.cardReadOutcome ?? "nepoznato"}. Prikazani podaci su od ranije.</small> : null}
+          {controls.cardReadPhase === "accepted" && (!state.driverName || !state.cardLast4) ? <small>Identitet nove kartice nije potpuno očitan. Ne pripisuj podatke vozaču bez provere.</small> : null}
         </div>
         <button
           type="button"
@@ -472,20 +481,24 @@ function AttentionScreen({ state }: Readonly<{ state: FieldProvenProductState }>
 }
 
 function CardScreen({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
+  const previousCard = controls.cardReadPhase === "error" || controls.cardReadPhase === "reading";
   return (
     <div className={styles.screen}>
       <div className={styles.screenTopline}><span>KARTICA I VEZA</span><small>Podaci ostaju na telefonu</small></div>
 
+      {previousCard ? <section className={styles.cardReadPanel} role="status"><strong>{controls.cardReadPhase === "error" ? "Nova kartica nije potvrđena" : "Nova kartica se očitava"}</strong><p>Ime, broj i istorija ispod pripadaju prethodno sačuvanoj kartici.</p>{controls.cardReadPhase === "error" ? <small>Kod: {controls.cardReadOutcome ?? "nepoznato"}</small> : null}</section> : null}
+      {controls.cardReadPhase === "accepted" && (!state.driverName || !state.cardLast4) ? <section className={styles.cardReadPanel} role="status"><strong>Identitet nove kartice nije potvrđen</strong><p>Ne pripisuj ove podatke vozaču dok ne proveriš ime i broj kartice.</p></section> : null}
+
       <div className={styles.statusGrid}>
-        <section><span>KARTICA</span><strong>{state.cardLast4 ? `•••• ${state.cardLast4}` : "Nije očitana"}</strong></section>
-        <section><span>VOZAČ</span><strong>{state.driverName ?? "Nije očitan"}</strong></section>
+        <section><span>{previousCard ? "PRETHODNA KARTICA" : "KARTICA"}</span><strong>{state.cardLast4 ? `•••• ${state.cardLast4}` : "Nije očitana"}</strong></section>
+        <section><span>{previousCard ? "PRETHODNI VOZAČ" : "VOZAČ"}</span><strong>{state.driverName ?? "Nije očitan"}</strong></section>
         <section><span>POSLEDNJE LIVE OČITAVANJE</span><strong>{state.lastLiveReadLabel ?? "—"}</strong></section>
         <section><span>TAHOGRAF</span><strong>{state.tachographLabel ?? "—"}</strong></section>
       </div>
 
       <section className={styles.cardReadPanel}>
         <span>ISTORIJA KARTICE</span>
-        <strong>{state.cardReadComplete ? "Kartica je bezbedno očitana" : "Kartica još nije očitana"}</strong>
+        <strong>{previousCard && state.cardReadComplete ? "Prethodno sačuvana istorija" : state.cardReadComplete ? "Kartica je sačuvana" : "Kartica još nije očitana"}</strong>
         <p>{state.historyDaysAvailable}/56 dana</p>
         {controls.restoreState === "restored" && controls.restoredLabel ? <small>Sačuvano {controls.restoredLabel}</small> : null}
       </section>

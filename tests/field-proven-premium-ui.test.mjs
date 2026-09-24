@@ -18,7 +18,7 @@ test("V3 keeps driver-facing language concise", () => {
     "Očitaj karticu",
     "DVE NEDELJE",
     "Nema trenutnog upozorenja.",
-    "Kartica je bezbedno očitana",
+    "Kartica je sačuvana",
     "Podaci ostaju na telefonu",
   ]) {
     assert.ok(client.includes(phrase), phrase + " must be present");
@@ -52,6 +52,16 @@ test("header follows connection and saved-card state instead of staying offline"
     assert.ok(client.includes(status));
   }
   assert.ok(client.includes('state.cardReadComplete ? "Kartica očitana"'));
+});
+
+test("finished byte transfer cannot claim a new card was accepted or relabel the previous driver", () => {
+  assert.ok(client.includes('controls.cardReadPhase === "error"'));
+  assert.ok(client.includes('controls.cardReadPhase === "accepted"'));
+  assert.ok(client.includes("PRETHODNI VOZAČ"));
+  assert.ok(client.includes("Kod: {controls.cardReadOutcome"));
+  assert.ok(client.includes("Identitet nove kartice nije potvrđen"));
+  assert.equal(client.includes('cardProgress?.complete\n                ? "Očitavanje kartice je završeno"'), false);
+  assert.equal(client.includes('controls.cardReadProgress?.complete || state.liveSnapshotAvailable'), false);
 });
 
 test("reconstruction stays data-driven and contains no personal field fixture", () => {
