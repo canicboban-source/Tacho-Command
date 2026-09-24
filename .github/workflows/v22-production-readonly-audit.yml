@@ -1,0 +1,76 @@
+name: V22 production read-only audit
+on:
+  push:
+    branches:
+      - release/v22-base-20260924
+    paths:
+      - .github/workflows/v22-production-readonly-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Read production Worker, active version and D1 identity without changing anything
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from "node:fs";
+
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          if (!token || !account) throw new Error("Cloudflare GitHub secrets are missing");
+
+          const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(account)}`;
+          async function read(path) {
+            const response = await fetch(base + path, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!response.ok) throw new Error(`Cloudflare read failed: ${response.status} at ${path}`);
+            const body = await response.json();
+            if (body.success !== true) throw new Error(`Cloudflare returned an unsuccessful read at ${path}`);
+            return body.result;
+          }
+
+          const [databaseResult, deploymentsResult] = await Promise.all([
+            read("/d1/database?name=tachocommand-prod"),
+            read("/workers/scripts/tachocommand/deployments"),
+          ]);
+          const databases = Array.isArray(databaseResult) ? databaseResult : databaseResult?.databases;
+          const database = databases?.filter((item) => item.name === "tachocommand-prod");
+          if (database?.length !== 1 || !database[0].uuid) {
+            throw new Error("Expected exactly one tachocommand-prod D1 database");
+          }
+
+          const deployments = Array.isArray(deploymentsResult)
+            ? deploymentsResult
+            : deploymentsResult?.deployments;
+          const active = deployments?.[0];
+          if (!active?.id || !Array.isArray(active.versions) || active.versions.length !== 1
+            || active.versions[0].percentage !== 100 || !active.versions[0].version_id) {
+            throw new Error("Cannot identify a single active production Worker version");
+          }
+          const versionId = active.versions[0].version_id;
+          const version = await read(`/workers/scripts/tachocommand/versions/${encodeURIComponent(versionId)}`);
+          const bindings = version?.resources?.bindings;
+          const bindingItems = Array.isArray(bindings) ? bindings : Object.values(bindings ?? {});
+          const dbBinding = bindingItems.find((item) => item?.name === "DB" || item?.binding === "DB");
+
+          const lines = [
+            "## TachoCommand production (read-only)",
+            `- Active deployment: ${active.id}`,
+            `- Active version: ${versionId} (100%)`,
+            `- Last deployment source: ${active.source ?? "unknown"}`,
+            `- Database name: ${database[0].name}`,
+            `- DB binding present: ${Boolean(dbBinding)}`,
+            `- DB binding points to this database: ${Boolean(dbBinding && (dbBinding.id === database[0].uuid || dbBinding.database_id === database[0].uuid))}`,
+            `- Script source: ${version?.resources?.script?.last_deployed_from ?? "unknown"}`,
+            "- Production was not changed by this audit.",
+          ];
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+          console.log(lines.join("\n"));
+          NODE
