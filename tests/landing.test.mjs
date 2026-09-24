@@ -80,7 +80,7 @@ test("PWA keeps the existing production identity when V22 is installed", () => {
   assert.equal(manifest.start_url, "/app");
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.theme_color, "#020304");
-  assert.match(serviceWorker, /tachocommand-shell-v48-app-v22/);
+  assert.match(serviceWorker, /tachocommand-shell-v49-app-beta-1/);
   assert.match(serviceWorker, /CORE_ASSETS = \["\/", "\/app"/);
   assert.match(serviceWorker, /caches\.match\("\/"\)/);
 });

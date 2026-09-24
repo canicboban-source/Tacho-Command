@@ -12,6 +12,18 @@ on:
       - tests/v17-production-clock.test.mjs
       - app/landing-page.tsx
       - app/landing-oled.css
+      - app/layout.tsx
+      - app/impressum/page.tsx
+      - app/privacy/page.tsx
+      - app/terms/page.tsx
+      - lib/product-version.js
+      - public/sw.js
+      - package.json
+      - package-lock.json
+      - tests/product-version.test.mjs
+      - tests/rendered-html.test.mjs
+      - tests/landing.test.mjs
+      - tests/field-test-readonly.test.mjs
 permissions:
   contents: read
 concurrency:
@@ -71,15 +83,21 @@ jobs:
             }
           };
           const root = await (await read("/")).text();
-          if (!root.includes("V22.0") || !root.includes("manifest.webmanifest")) {
-            throw new Error("Preview landing lacks V22.0 identity or manifest");
+          if (!root.includes("1.0.0-beta.1") || !root.includes("manifest.webmanifest")) {
+            throw new Error("Preview landing lacks beta identity or manifest");
           }
           await read("/app");
           await read("/sw.js");
+          for (const path of ["/impressum", "/privacy", "/terms"]) {
+            const html = await (await read(path)).text();
+            if (!html.includes("info@tachocommand.com" ) && path !== "/terms") {
+              throw new Error(`${path} lacks publisher contact`);
+            }
+          }
           const manifest = await (await read("/manifest.webmanifest")).json();
           if (manifest.id !== "/app" || manifest.start_url !== "/app"
               || manifest.short_name !== "TachoCommand" || manifest.display !== "standalone") {
-            throw new Error("Wrong V22.0 app identity on preview");
+            throw new Error("Wrong beta app identity on preview");
           }
-          console.log("V22.0 candidate verified:", origin);
+          console.log("TachoCommand 1.0.0-beta.1 candidate verified:", origin);
           NODE

@@ -3,18 +3,19 @@ import LegalPage from "../legal-page";
 
 export const metadata: Metadata = {
   title: "Impressum",
-  description: "Status projekta i podaci koji će biti kompletirani pre komercijalnog lansiranja TachoCommand-a.",
+  description: "Podaci izdavača i kontakt za TachoCommand.",
   alternates: { canonical: "/impressum" },
 };
 
 export default function ImpressumPage() {
   return (
-    <LegalPage kicker="CLOSED BETA" title="Impressum" updated="Podaci za komercijalni launch još nisu objavljeni.">
-      <h2>Status projekta</h2>
-      <p>TachoCommand je zatvoreni beta-projekat bez aktivne prodaje. Potpuni podaci pružaoca, poslovni kontakt i eventualni registracioni podaci biće objavljeni i provereni pre otvaranja plaćene licence.</p>
-      <h2>Važna napomena</h2>
-      <p>Ova stranica nije zamena za obavezni potpuni Impressum. Komercijalni checkout i oglašavanje ostaju zaključani dok pravni podaci ne budu kompletirani.</p>
+    <LegalPage kicker="BETA" title="Impressum" updated="Ažurirano 24. septembra 2026.">
+      <h2>Odgovoran za sadržaj i kontakt</h2>
+      <p>Canic Boban<br />Beim Spitzerriegel 2<br />2500 Baden<br />Austrija</p>
+      <p>E-pošta: <a href="mailto:info@tachocommand.com">info@tachocommand.com</a></p>
+      <h2>Status usluge</h2>
+      <p>TachoCommand je u beta periodu. Kupovina i naplata putem ovog sajta trenutno nisu dostupne.</p>
+      <p>Podaci o eventualnoj registraciji delatnosti, nadležnom organu i poreskom identifikatoru biće dodati ako su primenljivi, pre otvaranja prodaje.</p>
     </LegalPage>
   );
 }
-

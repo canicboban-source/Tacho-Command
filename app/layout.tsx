@@ -3,6 +3,7 @@ import "./globals.css";
 import "./landing-oled.css";
 import ServiceWorkerRegister from "./service-worker-register";
 import ProductAnalyticsObserver from "./product-analytics-observer";
+import { TACHOCOMMAND_VERSIONS } from "../lib/product-version.js";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.tachocommand.com"),
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     title: "TachoCommand",
   },
   formatDetection: { telephone: false },
-  other: { "application-status": "beta", "application-version": "V22.0" },
+  other: { "application-status": "beta", "application-version": TACHOCOMMAND_VERSIONS.product },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

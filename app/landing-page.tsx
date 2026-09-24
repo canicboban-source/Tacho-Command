@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import TrialLauncher from "./trial-launcher";
 import PwaInstallCta from "./pwa-install-cta";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
-import { formatTachoCommandVersionLine } from "../lib/product-version.js";
+import { formatTachoCommandVersionLine, TACHOCOMMAND_VERSIONS } from "../lib/product-version.js";
 
 export type Locale = "sr" | "en" | "de";
 
@@ -15,7 +15,7 @@ type LandingPageProps = Readonly<{
   canonicalLocaleRoute?: boolean;
 }>;
 
-const LANDING_RELEASE = "V22.0";
+const LANDING_RELEASE = TACHOCOMMAND_VERSIONS.product;
 
 const copy = {
   sr: {
@@ -223,7 +223,7 @@ export default function LandingPage({ initialLocale = "sr", canonicalLocaleRoute
       <section className="tcx-hero" id="top">
         <div className="tcx-hero-grid" aria-hidden="true" />
         <div className="tcx-hero-copy">
-          <span className="tcx-proof-badge"><i />{t.badge}</span>
+          <span className="tcx-proof-badge"><i />{t.badge} · BETA {LANDING_RELEASE}</span>
           <h1>{t.heroA}<br /><span>{t.heroB}</span></h1>
           <p>{t.heroText}</p>
           <div className="tcx-safety-note"><strong>✓</strong><span>{t.safetyNote}</span></div>

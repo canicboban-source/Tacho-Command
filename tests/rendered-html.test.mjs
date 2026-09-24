@@ -3,9 +3,9 @@ import { existsSync } from "node:fs";
 import test from "node:test";
 
 const productionVersionMeta =
-  /<meta(?=[^>]*\bname=["']application-version["'])(?=[^>]*\bcontent=["']V22\.0["'])[^>]*>/i;
+  /<meta(?=[^>]*\bname=["']application-version["'])(?=[^>]*\bcontent=["']1\.0\.0-beta\.1["'])[^>]*>/i;
 
-test("renders V22.0 production candidate metadata", async (t) => {
+test("renders the tagged beta production candidate metadata", async (t) => {
   const workerFile = new URL("../dist/server/index.js", import.meta.url);
   if (!existsSync(workerFile)) {
     t.skip("dist/server/index.js not built yet");
