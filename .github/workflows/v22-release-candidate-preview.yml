@@ -82,15 +82,18 @@ jobs:
               await new Promise((resolve) => setTimeout(resolve, 3000));
             }
           };
-          const root = await (await read("/")).text();
-          if (!root.includes("1.0.0-beta.1") || !root.includes("manifest.webmanifest")) {
-            throw new Error("Preview landing lacks beta identity or manifest");
+          let root = "";
+          for (let attempt = 0; attempt < 12; attempt++) {
+            root = await (await read("/")).text();
+            if (root.includes("1.0.0-beta.1") && root.includes("manifest.webmanifest")) break;
+            if (attempt === 11) throw new Error("Preview landing lacks beta identity or manifest");
+            await new Promise((resolve) => setTimeout(resolve, 3000));
           }
           await read("/app");
           await read("/sw.js");
           for (const path of ["/impressum", "/privacy", "/terms"]) {
             const html = await (await read(path)).text();
-            if (!html.includes("info@tachocommand.com" ) && path !== "/terms") {
+            if (!html.includes("info@tachocommand.com") && path !== "/terms") {
               throw new Error(`${path} lacks publisher contact`);
             }
           }

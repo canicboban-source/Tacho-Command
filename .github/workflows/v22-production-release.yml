@@ -153,13 +153,20 @@ jobs:
             --message "V22 verified release ${GITHUB_SHA}"
           node --input-type=module <<'NODE'
           const origin = "https://tachocommand.com";
+          let landingReady = false;
+          for (let attempt = 0; attempt < 12; attempt++) {
+            const response = await fetch(origin + "/", { cache: "no-store" });
+            if (response.ok && (await response.text()).includes("1.0.0-beta.1")) {
+              landingReady = true;
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+          if (!landingReady) throw new Error("Landing does not show the expected beta version");
           for (const path of ["/", "/app", "/manifest.webmanifest", "/sw.js", "/privacy", "/terms", "/impressum"]) {
             const response = await fetch(origin + path, { cache: "no-store" });
             if (!response.ok) throw new Error(`${path} failed: ${response.status}`);
             const body = path === "/" || path === "/privacy" || path === "/impressum" ? await response.text() : "";
-            if (path === "/" && !body.includes("1.0.0-beta.1")) {
-              throw new Error("Landing does not show the expected beta version");
-            }
             if ((path === "/privacy" || path === "/impressum") && !body.includes("info@tachocommand.com")) {
               throw new Error(`${path} lacks publisher contact`);
             }
