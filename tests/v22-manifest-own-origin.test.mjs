@@ -1,28 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-const origin="https://tachocommand-app-v22-preview.canicboban.workers.dev";
-test("Preview HTML manifest and metadataBase reference its own installable Worker origin",()=>{
+test("Production HTML manifest and metadataBase reference the canonical domain",()=>{
  const layout=readFileSync("app/layout.tsx","utf8");
- assert.match(layout,/metadataBase: new URL\("https:\/\/tachocommand-app-v22-preview\.canicboban\.workers\.dev"\)/);
- assert.match(layout,/manifest: "https:\/\/tachocommand-app-v22-preview\.canicboban\.workers\.dev\/manifest\.webmanifest"/);
- assert.doesNotMatch(layout,/metadataBase: new URL\("https:\/\/tachocommand\.com"\)/);
+ assert.match(layout,/metadataBase: new URL\("https:\/\/www\.tachocommand\.com"\)/);
+ assert.match(layout,/manifest: "\/manifest\.webmanifest"/);
+ assert.doesNotMatch(layout,/tachocommand-app-v22-preview/);
 });
-test("Preview install manifest is a standalone V22 app, never production hostname",()=>{
+test("Production install manifest preserves the installed app identity",()=>{
  const m=JSON.parse(readFileSync("public/manifest.webmanifest","utf8"));
- assert.equal(m.id,"/app?v22-preview");
- assert.equal(m.start_url,"/app?v22-preview");
+ assert.equal(m.id,"/app");
+ assert.equal(m.start_url,"/app");
  assert.equal(m.scope,"/");
- assert.equal(m.short_name,"TC V22 Test");
+ assert.equal(m.short_name,"TachoCommand");
  assert.equal(m.display,"standalone");
  for(const icon of m.icons)assert.match(icon.src,/^\/icon-(192|512)\.png$/);
  const root=readFileSync("app/landing-page.tsx","utf8");
- assert.match(root,/Instaliraj V22 test aplikaciju/);
+ assert.match(root,/Instaliraj aplikaciju/);
  assert.doesNotMatch(root,/app installed|Aplikacija je instalirana|App installed/);
 });
 test("Card transfer stays on original production GOLDEN bridge with no experimental readiness gate",()=>{
  const source=readFileSync("app/app-v2/app-v2-client.tsx","utf8");
- assert.match(source,/PREVIEW V22/);
+ assert.match(source,/formatTachoCommandVersionLine\(\)/);
  assert.match(source,/runBrowserAppV2GoldenCardRead\(\{/);
  assert.doesNotMatch(source,/prepareAppV2CardHandoff|onDeviceSelected|awaitingCardRecognition/);
 });

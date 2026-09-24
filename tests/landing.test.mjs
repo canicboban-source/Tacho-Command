@@ -10,13 +10,12 @@ const installGuide = await readFile(new URL("../app/install-guide.tsx", import.m
 const manifest = JSON.parse(await readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
 const serviceWorker = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
 
-test("public root tells the field-proven 2026-09-16 product story", () => {
+test("public root tells the field-proven V22 product story without invented diagnostics", () => {
   assert.match(landing, /FIELD PROVEN/);
   assert.match(landing, /VDO DTCO 4\.1a/);
   assert.match(landing, /GEN2 V2/);
-  assert.match(landing, /217/);
-  assert.match(landing, /56 \/ 56/);
-  assert.match(landing, /67\.295 B/);
+  assert.match(landing, /56 dana/);
+  assert.doesNotMatch(landing, /67\.295 B|56 \/ 56/);
   assert.match(landing, /data-release=\{LANDING_RELEASE\}/);
   assert.match(appPage, /AppV2Client/);
 });
@@ -50,8 +49,8 @@ test("landing keeps compatibility claims bounded to real field evidence", () => 
   assert.match(landing, /FIELD TESTED/);
   assert.match(landing, /PLANNED \/ NOT YET CLAIMED/);
   assert.match(landing, /iPhone \/ Safari Web Bluetooth path/);
-  assert.match(landing, /Drugi Smart Tacho 2 modeli bez field testa/);
-  assert.match(landing, /Potpuna kriptografska signature validacija u UI-ju/);
+  assert.match(landing, /Other Smart Tacho 2 models without field tests/);
+  assert.match(landing, /Full cryptographic signature validation in UI/);
   assert.doesNotMatch(landing, /100% Read-Only/);
 });
 
@@ -75,18 +74,13 @@ test("base install guide offers a native prompt and an actionable fallback", () 
   assert.match(installGuide, /onClick=\{\(\) => installed \? setOpen\(true\) : installPrompt \? void installNow\(\) : setOpen\(true\)\}/);
 });
 
-test("PWA identity opens the app for both production and isolated V22 preview", () => {
-  if (manifest.id === "/app?v22-preview") {
-    assert.equal(manifest.name, "TachoCommand V22 — Preview (test)");
-    assert.equal(manifest.start_url, "/app?v22-preview");
-  } else {
-    assert.equal(manifest.name, "TachoCommand — Driver Cockpit");
-    assert.equal(manifest.id, "/app");
-    assert.equal(manifest.start_url, "/app");
-  }
+test("PWA keeps the existing production identity when V22 is installed", () => {
+  assert.equal(manifest.name, "TachoCommand");
+  assert.equal(manifest.id, "/app");
+  assert.equal(manifest.start_url, "/app");
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.theme_color, "#020304");
-  assert.match(serviceWorker, /tachocommand-shell-v47-app-v3/);
+  assert.match(serviceWorker, /tachocommand-shell-v48-app-v22/);
   assert.match(serviceWorker, /CORE_ASSETS = \["\/", "\/app"/);
   assert.match(serviceWorker, /caches\.match\("\/"\)/);
 });

@@ -14,9 +14,8 @@ const landingPage = fs.readFileSync(new URL("../app/landing-page.tsx", import.me
 const manifest = JSON.parse(fs.readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
 
 test("root metadata uses the verified production domain", () => {
-  const origin = manifest.id === "/app?v22-preview"
-    ? "https://tachocommand-app-v22-preview.canicboban.workers.dev"
-    : "https://tachocommand.com";
+  const origin = "https://www.tachocommand.com";
+  assert.equal(manifest.id, "/app");
   assert.ok(rootLayout.includes(`metadataBase: new URL("${origin}")`));
   assert.match(home, /canonical:\s*"\/"\s*,/);
   assert.match(home, /openGraph:/);

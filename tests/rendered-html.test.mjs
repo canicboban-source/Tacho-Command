@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test from "node:test";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
+const productionVersionMeta =
+  /<meta(?=[^>]*\bname=["']application-version["'])(?=[^>]*\bcontent=["']V22\.0["'])[^>]*>/i;
 
-test("renders development preview metadata", async (t) => {
+test("renders V22.0 production candidate metadata", async (t) => {
   const workerFile = new URL("../dist/server/index.js", import.meta.url);
   if (!existsSync(workerFile)) {
     t.skip("dist/server/index.js not built yet");
@@ -35,5 +35,7 @@ test("renders development preview metadata", async (t) => {
     response.headers.get("content-type") ?? "",
     /^text\/html\b/i,
   );
-  assert.match(await response.text(), developmentPreviewMeta);
+  const html = await response.text();
+  assert.match(html, productionVersionMeta);
+  assert.doesNotMatch(html, /codex-preview/);
 });

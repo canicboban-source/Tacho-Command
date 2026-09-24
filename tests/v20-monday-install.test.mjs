@@ -54,7 +54,7 @@ test("V20 uses one install owner and preserves the unmodified proven card transp
  const prompt=readFileSync("app/pwa-install-cta.tsx","utf8");
  const guide=readFileSync("app/install-guide.tsx","utf8");
  const app=readFileSync("app/app-v2/app-v2-client.tsx","utf8");
- if (landing.includes("Instaliraj V22 test aplikaciju")) {
+ if (landing.includes("Instaliraj aplikaciju")) {
   assert.match(prompt,/addEventListener\("beforeinstallprompt"/);
   assert.doesNotMatch(landing,/InstallGuide/);
  } else {
@@ -67,7 +67,7 @@ test("V20 uses one install owner and preserves the unmodified proven card transp
  }
  assert.doesNotMatch(app,/createDeferredCardDeviceChooser|keepGattConnected/);
  assert.match(app,/runBrowserAppV2GoldenCardRead\(\{/);
- assert.match(app,/PREVIEW V(?:20|22)/);
+ assert.match(app,/formatTachoCommandVersionLine\(\)/);
 });
 
 test("V20 refreshes phone-local day for the Monday rollover",()=>{
@@ -75,6 +75,6 @@ test("V20 refreshes phone-local day for the Monday rollover",()=>{
  assert.match(app,/new Intl\.DateTimeFormat\("sv-SE"/);
  assert.match(app,/calendarFortnightFromMonday\(projected\.historyDays, \{ timeZone \}\)/);
  const manifest=JSON.parse(readFileSync("public/manifest.webmanifest","utf8"));
- assert.equal(manifest.short_name, manifest.id === "/app?v22-preview" ? "TC V22 Test" : "TC V20 Test");
- assert.ok(["/app?v20-preview", "/app?v22-preview"].includes(manifest.id));
+ assert.equal(manifest.short_name, "TachoCommand");
+ assert.equal(manifest.id, "/app");
 });
