@@ -34,6 +34,25 @@ test("late UTC activity moves into next local calendar date",()=>{
  assert.equal(projected.historyDays[0].segments[0].endMinute,120);
 });
 
+test("a same-day card read never projects unfinished UTC rest into tomorrow",()=>{
+ const today=day("2026-09-24",0,1440);
+ today.segments=[{kind:"rest",startMinute:0,endMinute:1440,minutes:1440,cardStatus:"not-inserted"}];
+ today.events=[{kind:"card-removed",minute:1200}];
+ const source={...card(day("2026-09-23",600,660),today),lastCardReadAtIso:"2026-09-24T13:33:00.000Z"};
+ const projected=projectCardTimelineForPhone(source,"Europe/Vienna",{now:new Date("2026-09-24T13:37:00.000Z")});
+ assert.deepEqual(projected.historyDays.map(d=>d.dateIso),["2026-09-23","2026-09-24"]);
+ assert.equal(projected.historyDays.at(-1).segments.at(-1).endMinute,933);
+ assert.equal(projected.historyDays.at(-1).events.length,0);
+ assert.equal(source.historyDays.at(-1).segments[0].endMinute,1440);
+});
+
+test("projection also caps at phone time if saved read time is in the future",()=>{
+ const source={...card(day("2026-09-24",0,1440)),lastCardReadAtIso:"2026-09-25T00:00:00.000Z"};
+ const projected=projectCardTimelineForPhone(source,"Europe/Vienna",{now:new Date("2026-09-24T13:37:00.000Z")});
+ assert.equal(projected.historyDays.at(-1).dateIso,"2026-09-24");
+ assert.equal(projected.historyDays.at(-1).segments.at(-1).endMinute,937);
+});
+
 test("different phone zones change only the projection; original storage data stays untouched",()=>{
  const source=card(day("2026-09-23",600,660));const original=JSON.stringify(source);
  const vienna=projectCardTimelineForPhone(source,"Europe/Vienna");

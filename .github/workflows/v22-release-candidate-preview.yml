@@ -8,6 +8,8 @@ on:
       - app/app-v2/app-v2-client.tsx
       - app/app/field-proven-premium-ui.tsx
       - tests/field-proven-premium-ui.test.mjs
+      - lib/app-v2-phone-timeline.js
+      - tests/v17-production-clock.test.mjs
 permissions:
   contents: read
 concurrency:
