@@ -1,6 +1,6 @@
 # TachoCommand V22.0 — priprema za Cloudflare
 
-Ova grana je kandidat za objavu, ne potvrda da je proizvodnja ažurirana.
+`1.0.0-beta.1` je objavljena na glavnom domenu 24.09.2026. u 17:10:56 po Europe/Vienna. GitHub Actions izvršavanje `36018168400` je završeno uspešno: Cloudflare Worker `tachocommand` verzija `e15960ee-9a42-4512-9de6-042c8be7da5d` ima 100% saobraćaja. Početak i kraj desetodnevnog perioda su u `docs/release/1.0.0-beta.1-freeze.md`.
 
 ## Poznato proizvodno stanje
 
