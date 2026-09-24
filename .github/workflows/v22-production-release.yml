@@ -171,8 +171,14 @@ jobs:
               throw new Error(`${path} lacks publisher contact`);
             }
           }
-          const response = await fetch("https://www.tachocommand.com/", { redirect: "follow", cache: "no-store" });
-          if (!response.ok) throw new Error("www domain is unavailable");
+          for (const appOrigin of [origin, "https://www.tachocommand.com"]) {
+            const response = await fetch(appOrigin + "/", { redirect: "follow", cache: "no-store" });
+            if (!response.ok) throw new Error(`${appOrigin} is unavailable`);
+            const html = await response.text();
+            if (!/<link rel="manifest" href="\/manifest\.webmanifest"\s*\/>/.test(html)) {
+              throw new Error(`${appOrigin} advertises a cross-origin install manifest`);
+            }
+          }
           const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
           const deployment = await fetch(base + "/workers/scripts/tachocommand/deployments", {
             headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
