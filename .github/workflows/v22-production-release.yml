@@ -4,7 +4,7 @@ on:
     branches:
       - release/v22-base-20260924
     paths:
-      - docs/release/v22-promote-beta3.marker
+      - docs/release/v22-promote-beta3-retry.marker
 permissions:
   contents: read
 concurrency:
@@ -172,12 +172,19 @@ jobs:
             }
           }
           for (const appOrigin of [origin, "https://www.tachocommand.com"]) {
-            const response = await fetch(appOrigin + "/", { redirect: "follow", cache: "no-store" });
-            if (!response.ok) throw new Error(`${appOrigin} is unavailable`);
-            const html = await response.text();
-            if (!/<link rel="manifest" href="\/manifest\.webmanifest"\s*\/>/.test(html)) {
-              throw new Error(`${appOrigin} advertises a cross-origin install manifest`);
+            let ready = false;
+            for (let attempt = 0; attempt < 12; attempt++) {
+              const response = await fetch(appOrigin + "/", { redirect: "follow", cache: "no-store" });
+              if (response.ok) {
+                const html = await response.text();
+                if (html.includes("1.0.0-beta.3") && /<link rel="manifest" href="\/manifest\.webmanifest"\s*\/>/.test(html)) {
+                  ready = true;
+                  break;
+                }
+              }
+              await new Promise((resolve) => setTimeout(resolve, 3000));
             }
+            if (!ready) throw new Error(`${appOrigin} did not serve beta.3 with a same-origin manifest`);
           }
           const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
           const deployment = await fetch(base + "/workers/scripts/tachocommand/deployments", {

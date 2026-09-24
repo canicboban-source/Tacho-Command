@@ -1,0 +1,1 @@
+Retry beta.3 deployment after observed Cloudflare propagation lag between apex and www domains. Verified prior version beta.2 was restored to 100% after first smoke check. New smoke waits for both origins to serve beta.3 with relative manifest; rolls back if either remains stale.
