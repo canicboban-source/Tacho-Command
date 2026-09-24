@@ -10,6 +10,7 @@ Ova grana je kandidat za objavu, ne potvrda da je proizvodnja ažurirana.
 - Proizvodna D1 baza: vezivanje `DB`, baza `tachocommand-prod`; njen ID je potvrđen na snimku Cloudflare D1 Overview od 2026-09-24. Pre objave ga treba postaviti u generisanu konfiguraciju, bez kopiranja probnog ID-a.
 - U GitHub repozitorijumu su na snimku Settings → Actions potvrđeni nazivi tajni `CLOUDFLARE_API_TOKEN` i `CLOUDFLARE_ACCOUNT_ID`. Njihovo postojanje ne potvrđuje da su token i dozvole još važeći.
 - Na dostavljenom snimku najnovija verzija `c0c71562` menjala je tajnu; poslednja ručna objava koda bila je `42215e2f`.
+- Automatska provera samo za čitanje (GitHub Actions, 2026-09-24, izvršavanje `35986421007`) potvrdila je da token radi, aktivna objava je `c65f116f-a703-46e7-92e9-27b64e6edacd`, a 100% zahteva ide na verziju `c0c71562-c697-41fd-b89f-52c2daf1928a`. Vezivanje `DB` pokazuje baš na bazu `tachocommand-prod`. Provera nije menjala proizvodnju.
 
 ## Sadržaj kandidata
 
@@ -25,6 +26,6 @@ Ova grana je kandidat za objavu, ne potvrda da je proizvodnja ažurirana.
 3. Sačuvati prethodnu verziju Workera za povratak, objaviti na postojećem Workeru, pa proveriti domen, vezivanje baze, instalaciju i administratorsku putanju.
 4. Ponoviti proveru na telefonu i tahografu pri sledećem terenskom terminu; terenska potvrda postojećeg čitanja ne potvrđuje automatski novu objavu.
 
-Cloudflare tabla je u dostupnom automatizovanom pregledaču 2026-09-24 ostala na stranici za proveru posetioca. Korisnički snimci potvrđuju ID baze i nazive GitHub tajni, ali trenutni tačni izvor proizvodnog Workera, važnost tokena i povratak na staru verziju nisu potvrđeni kroz nalog. Postojeći dokument `docs/project-state/TACHOCOMMAND-CANONICAL-STATE.md` upozorava da se izvor trenutno objavljenog proizvoda ne podudara nužno sa GitHub `main`. Ne zamenjivati živi Worker pre poređenja tih verzija.
+Cloudflare tabla je u dostupnom automatizovanom pregledaču 2026-09-24 ostala na stranici za proveru posetioca. GitHub Actions provera je preko Cloudflare API-ja potvrdila aktivnu verziju, token i bazu, pa se poznata verzija može koristiti kao polazna tačka za plan povratka. Tačan izvor proizvodnog Workera i dalje nije potvrđen kao jednak GitHub `main`: postojeći dokument `docs/project-state/TACHOCOMMAND-CANONICAL-STATE.md` na to upozorava. Ne zamenjivati živi Worker dok ne postoji proverena nova verzija i dokumentovan korak vraćanja na `c0c71562-c697-41fd-b89f-52c2daf1928a`.
 
 Ne objavljivati probnu konfiguraciju baze na proizvodnju.
