@@ -1,0 +1,78 @@
+name: V22.0 isolated Cloudflare release candidate
+on:
+  push:
+    branches:
+      - release/v22-base-20260924
+    paths:
+      - .github/workflows/v22-release-candidate-preview.yml
+permissions:
+  contents: read
+concurrency:
+  group: tachocommand-v22-release-candidate-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify entire candidate before building
+        run: node --test tests/*.test.mjs
+      - run: npm run build
+      - name: Restrict this deployment to its own Worker without production bindings or routes
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "dist/server/wrangler.json";
+          const config = JSON.parse(readFileSync(path, "utf8"));
+          config.name = "tachocommand-v22-release-candidate";
+          config.d1_databases = [];
+          config.r2_buckets = [];
+          config.kv_namespaces = [];
+          delete config.routes;
+          delete config.route;
+          delete config.zone_id;
+          delete config.custom_domains;
+          delete config.images;
+          config.observability = { enabled: false };
+          if (config.name === "tachocommand" || config.d1_databases.length
+              || config.routes || config.route || config.zone_id || config.custom_domains) {
+            throw new Error("Preview configuration must not touch production");
+          }
+          writeFileSync(path, JSON.stringify(config));
+          NODE
+      - name: Upload only the isolated Worker
+        run: npx wrangler deploy --config dist/server/wrangler.json
+      - name: Verify landing, app, manifest and service worker on that origin
+        run: |
+          node --input-type=module <<'NODE'
+          const origin = "https://tachocommand-v22-release-candidate.canicboban.workers.dev";
+          const read = async (path) => {
+            for (let attempt = 0; attempt < 12; attempt++) {
+              const response = await fetch(origin + path, { cache: "no-store" });
+              if (response.ok) return response;
+              if (attempt === 11) throw new Error(`${path} failed: ${response.status}`);
+              await new Promise((resolve) => setTimeout(resolve, 3000));
+            }
+          };
+          const root = await (await read("/")).text();
+          if (!root.includes("V22.0") || !root.includes("manifest.webmanifest")) {
+            throw new Error("Preview landing lacks V22.0 identity or manifest");
+          }
+          await read("/app");
+          await read("/sw.js");
+          const manifest = await (await read("/manifest.webmanifest")).json();
+          if (manifest.id !== "/app" || manifest.start_url !== "/app"
+              || manifest.short_name !== "TachoCommand" || manifest.display !== "standalone") {
+            throw new Error("Wrong V22.0 app identity on preview");
+          }
+          console.log("V22.0 candidate verified:", origin);
+          NODE
