@@ -1,0 +1,6 @@
+TachoCommand 1.0.0-beta.1
+Source: 106593c40d4005c90a80893e9410e8aa685e875a
+Field confirmation: 2026-09-24, own card on third tachograph; driver identity and times confirmed.
+Publisher: natural person, no checkout or payment in beta.
+Preview: GitHub Actions run 36018009162 passed isolated Cloudflare deployment and HTTP smoke.
+Production: use guarded workflow preflight, D1 binding validation, 100% promotion and rollback on smoke failure.
