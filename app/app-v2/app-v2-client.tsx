@@ -12,7 +12,10 @@ import { createAppV2LiveSession } from "../../lib/app-v2-live-session.js";
 import { beginAppV2CardRead, createAppV2CardSession } from "../../lib/app-v2-card-session.js";
 import { runBrowserAppV2GoldenCardRead } from "../../lib/app-v2-card-transport-controller-bridge.js";
 import { openBrowserAppV2FieldTransport } from "../../lib/app-v2-field-transport.js";
+import { phoneTimeZone, phoneUtcOffsetLabel, projectCardTimelineForPhone } from "../../lib/app-v2-phone-timeline.js";
+import { calendarFortnightFromMonday } from "../../lib/app-v2-monday-fortnight.js";
 import { runAppV2LiveAttemptWithTelemetry } from "../../lib/app-v2-technical-telemetry-bridge.js";
+import { reportAppV2CardReadOutcome } from "../../lib/app-v2-card-telemetry.js";
 import styles from "./app-v2.module.css";
 
 type RestoreState = "checking" | "restored" | "empty" | "invalid";
@@ -44,6 +47,8 @@ export default function AppV2Client() {
   const [lastLiveSnapshot, setLastLiveSnapshot] = useState<Readonly<Record<string, unknown>> | null>(null);
   const [cardSession, setCardSession] = useState(() => createAppV2CardSession());
   const [cardReadProgress, setCardReadProgress] = useState<CardReadProgress | null>(null);
+  const [phoneZoneKey, setPhoneZoneKey] = useState<string | null>(null);
+  const [cardTelemetry, setCardTelemetry] = useState<{ status: string; attemptCode: string | null } | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -75,6 +80,39 @@ export default function AppV2Client() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const syncPhoneTime = () => {
+      const zone = phoneTimeZone();
+      const date = new Intl.DateTimeFormat("sv-SE", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      const next = zone + "|" + phoneUtcOffsetLabel() + "|" + date;
+      setPhoneZoneKey((previous) => previous === next ? previous : next);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") syncPhoneTime();
+    };
+    syncPhoneTime();
+    window.addEventListener("focus", syncPhoneTime);
+    document.addEventListener("visibilitychange", onVisibility);
+    const timer = window.setInterval(syncPhoneTime, 30_000);
+    return () => {
+      window.removeEventListener("focus", syncPhoneTime);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const displayCard = useMemo(() => {
+    if (!phoneZoneKey || !cardState) return cardState ?? {};
+    const timeZone = phoneZoneKey.split("|")[0];
+    const projected = projectCardTimelineForPhone(cardState, timeZone);
+    // Two calendar weeks: previous Monday through current local day. Preserve
+    // the downloaded UTC card snapshot; these figures are display-only.
+    return Object.freeze({
+      ...projected,
+      fortnightDrivingMinutes: calendarFortnightFromMonday(projected.historyDays, { timeZone }),
+    });
+  }, [cardState, phoneZoneKey]);
+
   const state = useMemo(() => {
     const latestDiagnostics = liveSession.productLive ?? {};
     const stableLive = lastLiveSnapshot ?? { connected: false };
@@ -88,10 +126,10 @@ export default function AppV2Client() {
             telemetryAcceptedCount:
               latestDiagnostics.telemetryAcceptedCount ?? stableLive.telemetryAcceptedCount,
           },
-      card: cardState ?? {},
+      card: displayCard,
       localeLabel: "SR · Srpski",
     });
-  }, [cardState, lastLiveSnapshot, liveRunState, liveSession]);
+  }, [displayCard, lastLiveSnapshot, liveRunState, liveSession]);
 
   const restoredLabel = formatRestoreTime(capturedAtIso);
 
@@ -140,6 +178,7 @@ export default function AppV2Client() {
     const readingSession = beginAppV2CardRead(cardSession);
     setCardSession(readingSession);
     setCardReadProgress(Object.freeze({ submessages: 0, byteLength: 0, complete: false }));
+    setCardTelemetry(null);
 
     const result = await runBrowserAppV2GoldenCardRead({
       session: readingSession,
@@ -149,6 +188,11 @@ export default function AppV2Client() {
     });
 
     if (result.session) setCardSession(result.session);
+
+    // The card session is already complete; telemetry cannot alter the read result.
+    void reportAppV2CardReadOutcome({ status: result.status }).then((report) => {
+      setCardTelemetry({ status: report.status, attemptCode: report.attemptCode });
+    });
 
     if (result.status === "accepted" && result.session?.currentCard) {
       setCardState(result.session.currentCard);
@@ -177,6 +221,8 @@ export default function AppV2Client() {
             restoredLabel,
             errorText: cardSession.errorText ?? liveSession.errorText ?? null,
             cardReadProgress,
+            cardTelemetry,
+            phoneTimeLabel: phoneZoneKey ? phoneZoneKey.split("|")[0] + " · " + phoneZoneKey.split("|")[1] : null,
             versionLine: formatTachoCommandVersionLine(),
             onConnect: runLiveRead,
             onReadCard: runCardRead,

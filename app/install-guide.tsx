@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import styles from "./install-guide.module.css";
 
 type Locale = "sr" | "en" | "de";
@@ -92,6 +92,26 @@ export default function InstallGuide() {
   const [installed, setInstalled] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
 
+  const installNow = useCallback(async () => {
+    if (!installPrompt) {
+      setOpen(true);
+      return;
+    }
+    const prompt = installPrompt;
+    setInstallPrompt(null); // A browser install event can only be used once.
+    setInstallError(null);
+    try {
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice.outcome !== "accepted") setOpen(true);
+      // Only appinstalled (not acceptance) confirms successful installation.
+    } catch (error) {
+      const reason = error instanceof Error ? error.message.slice(0, 130) : String(error).slice(0, 130);
+      setInstallError("Chrome nije pokrenuo instalaciju: " + reason);
+      setOpen(true);
+    }
+  }, [installPrompt]);
+
   useEffect(() => {
     const onBeforeInstall = (event: Event) => {
       event.preventDefault();
@@ -121,27 +141,7 @@ export default function InstallGuide() {
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("tachocommand-open-install-guide", onLandingInstall);
     };
-  }, [installPrompt, installed]);
-
-  const installNow = async () => {
-    if (!installPrompt) {
-      setOpen(true);
-      return;
-    }
-    const prompt = installPrompt;
-    setInstallPrompt(null); // A browser install event can only be used once.
-    setInstallError(null);
-    try {
-      await prompt.prompt();
-      const choice = await prompt.userChoice;
-      if (choice.outcome !== "accepted") setOpen(true);
-      // Only appinstalled (not acceptance) confirms successful installation.
-    } catch (error) {
-      const reason = error instanceof Error ? error.message.slice(0, 130) : String(error).slice(0, 130);
-      setInstallError("Chrome nije pokrenuo instalaciju: " + reason);
-      setOpen(true);
-    }
-  };
+  }, [installPrompt, installed, installNow]);
 
   return (
     <>

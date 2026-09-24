@@ -16,7 +16,9 @@ type ProductControls = Readonly<{
     byteLength: number;
     complete: boolean;
   }> | null;
+  cardTelemetry: Readonly<{ status: string; attemptCode: string | null }> | null;
   versionLine: string;
+  phoneTimeLabel: string | null;
   onConnect: () => void;
   onReadCard: () => void;
 }>;
@@ -255,7 +257,7 @@ function PeriodsScreen({ state }: Readonly<{ state: FieldProvenProductState }>) 
   const periods = [
     ["DANAS", formatMinutes(state.todayDrivingMinutes), "Dnevna vožnja"],
     ["OVA NEDELJA", formatMinutes(state.weekDrivingMinutes), "Tekuća nedelja"],
-    ["DVE NEDELJE", formatMinutes(state.fortnightDrivingMinutes), "Iz istorije kartice"],
+    ["DVE NEDELJE", formatMinutes(state.fortnightDrivingMinutes), "Od prethodnog ponedeljka · istorija kartice"],
   ] as const;
 
   return (
@@ -276,7 +278,8 @@ function PeriodsScreen({ state }: Readonly<{ state: FieldProvenProductState }>) 
 function HistoryDayDetail({
   day,
   onBack,
-}: Readonly<{ day: FieldProvenHistoryDay; onBack: () => void }>) {
+  phoneTimeLabel,
+}: Readonly<{ day: FieldProvenHistoryDay; onBack: () => void; phoneTimeLabel: string | null }>) {
   const ticks = Array.from({ length: 97 }, (_, index) => index);
   const summary = [
     ["drive", "Vožnja"],
@@ -294,6 +297,7 @@ function HistoryDayDetail({
 
       <div className={styles.pageIntro}>
         <h1>{day.dateLabel}</h1>
+        {phoneTimeLabel ? <p>Vreme na telefonu: {phoneTimeLabel}. Kartični zapisi su prikazani po lokalnom vremenu telefona.</p> : null}
         <p>24-časovni zapis aktivnosti sa tahografske kartice. Velike crte su sati, srednje 30 min, male 15 min.</p>
       </div>
 
@@ -384,16 +388,18 @@ function HistoryDayDetail({
   );
 }
 
-function HistoryScreen({ state }: Readonly<{ state: FieldProvenProductState }>) {
-  const visibleDays = state.historyDays.slice(0, 56);
+function HistoryScreen({ state, phoneTimeLabel }: Readonly<{ state: FieldProvenProductState; phoneTimeLabel: string | null }>) {
+  // The verified parser returns oldest→newest; display the newest day first.
+  const visibleDays = state.historyDays.slice(0, 56).reverse();
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const selectedDay = selectedDayIndex === null ? null : visibleDays[selectedDayIndex] ?? null;
 
-  if (selectedDay) return <HistoryDayDetail day={selectedDay} onBack={() => setSelectedDayIndex(null)} />;
+  if (selectedDay) return <HistoryDayDetail day={selectedDay} onBack={() => setSelectedDayIndex(null)} phoneTimeLabel={phoneTimeLabel} />;
 
   return (
     <div className={styles.screen}>
       <div className={styles.screenTopline}><span>ISTORIJA KARTICE</span><small>{state.historyDaysAvailable} od 56 dana</small></div>
+      {phoneTimeLabel ? <p>Vreme telefona: {phoneTimeLabel} · Lokalni prikaz aktivnosti kartice</p> : null}
 
       <div className={styles.legend}>
         <span><i className={styles.drive} />Vožnja</span>
@@ -483,6 +489,7 @@ function CardScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
         <p>{state.historyDaysAvailable}/56 dana</p>
         {controls.restoreState === "restored" && controls.restoredLabel ? <small>Sačuvano {controls.restoredLabel}</small> : null}
       </section>
+      {controls.cardTelemetry ? <p role="status">Tehnička telemetrija očitavanja: {controls.cardTelemetry.status === "accepted" ? "primljena" : "nije potvrđena"}{controls.cardTelemetry.attemptCode ? ` · Kod pokušaja ${controls.cardTelemetry.attemptCode}` : ""}</p> : null}
       <small className={styles.versionLine}>{controls.versionLine}</small>
     </div>
   );
@@ -496,7 +503,7 @@ export default function FieldProvenPremiumUi({ state, controls }: Readonly<{ sta
       case "periods":
         return <PeriodsScreen state={state} />;
       case "history":
-        return <HistoryScreen state={state} />;
+        return <HistoryScreen state={state} phoneTimeLabel={controls.phoneTimeLabel} />;
       case "attention":
         return <AttentionScreen state={state} />;
       case "card":

@@ -28,6 +28,7 @@ type Overview = Readonly<{
     totalEvents: number;
     lastEventAt: number | null;
     outcomes: Readonly<Record<string, number>>;
+    cardOutcomes: Readonly<Record<string, number>>;
   }>;
   privacy: Readonly<{
     aggregateOnly: boolean;
@@ -258,6 +259,10 @@ export default function AdminDashboard() {
 
         <article className={styles.panel}>
           <div className={styles.panelTitle}><div><small>TECHNICAL TELEMETRY</small><h2>Zdravlje očitavanja</h2></div><span>{formatNumber(overview.technical.totalEvents)} događaja</span></div>
+          <div className={styles.rows}>
+            <div><span>Kartica uspešno očitana</span><strong>{formatNumber(overview.technical.cardOutcomes?.complete ?? 0)}</strong></div>
+            <div><span>Kartica nije očitana</span><strong>{formatNumber(overview.technical.cardOutcomes?.error ?? 0)}</strong></div>
+          </div>
           <div className={styles.rows}>
             {Object.entries(overview.technical.outcomes).length === 0 ? <p>Nema podataka.</p> : Object.entries(overview.technical.outcomes).map(([outcome, count]) => (
               <div key={outcome}><span>{outcome}</span><strong>{formatNumber(count)}</strong></div>

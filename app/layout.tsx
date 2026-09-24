@@ -5,13 +5,13 @@ import ServiceWorkerRegister from "./service-worker-register";
 import ProductAnalyticsObserver from "./product-analytics-observer";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tachocommand.com"),
+  metadataBase: new URL("https://www.tachocommand.com"),
   title: {
-    default: "TachoCommand — OLED cockpit za profesionalne vozače",
+    default: "TachoCommand — očitaj karticu i pregledaj 56 dana",
     template: "%s | TachoCommand",
   },
   description:
-    "TachoCommand čita podržanu Smart Tacho 2 driver karticu preko telefona, pretvara Gen2 v2 istoriju u jasan 56-day timeline i prikazuje vožnju, pauze, upozorenja i pravne rule profile bez nagađanja.",
+    "TachoCommand na podržanom VDO DTCO 4.1a očitava vozačku karticu preko Android telefona i prikazuje poslednjih 56 dana aktivnosti. Tahograf i kartica ostaju merodavni.",
   manifest: "/manifest.webmanifest",
   applicationName: "TachoCommand",
   appleWebApp: {
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: "TachoCommand",
   },
   formatDetection: { telephone: false },
-  other: { "codex-preview": "development", "application-status": "closed-beta" },
+  other: { "application-status": "beta", "application-version": "V22.0" },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

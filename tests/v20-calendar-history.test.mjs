@@ -50,7 +50,7 @@ test("V20 retains the field-proven V19 production card transfer path", () => {
   const client = readFileSync("app/app-v2/app-v2-client.tsx", "utf8");
   const bridge = readFileSync("lib/app-v2-card-transport-controller-bridge.js", "utf8");
   assert.match(client, /runBrowserAppV2GoldenCardRead\(\{/);
-  assert.match(client, /PREVIEW V21/);
+  assert.match(client, /PREVIEW V22/);
   assert.doesNotMatch(client, /prepareAppV2CardHandoff|onDeviceSelected|awaitingCardRecognition|keepGattConnected/);
   assert.match(bridge, /readBrowserAppV2GoldenCardPayload\(\{/);
 });

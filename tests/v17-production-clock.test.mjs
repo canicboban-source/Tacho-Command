@@ -49,7 +49,7 @@ test("V17 uses the production direct-card chooser, not the experimental retained
  assert.match(client,/const result = await runBrowserAppV2GoldenCardRead\(\{/);
  assert.doesNotMatch(client,/prepareAppV2CardHandoff|transportOptions:|keepGattConnected/);
  assert.match(golden,/const device = await bluetooth\.requestDevice\(\{/);
- assert.match(client,/PREVIEW V17/);
+ assert.match(client,/PREVIEW V22/);
  assert.match(client,/projectCardTimelineForPhone/);
 });
 test("Landing communicates stationary-only safety in Serbian English and German",()=>{

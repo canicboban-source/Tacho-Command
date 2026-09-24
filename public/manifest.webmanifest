@@ -1,7 +1,7 @@
 {
-  "name": "TachoCommand — Driver Cockpit",
+  "name": "TachoCommand",
   "short_name": "TachoCommand",
-  "description": "OLED cockpit za profesionalne vozače: Smart Tacho 2 card download, 56-day timeline, pauze, upozorenja i rule profiles.",
+  "description": "Očitaj vozačku karticu i pregledaj poslednjih 56 dana.",
   "id": "/app",
   "start_url": "/app",
   "scope": "/",
@@ -10,7 +10,10 @@
   "background_color": "#020304",
   "theme_color": "#020304",
   "lang": "sr",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",

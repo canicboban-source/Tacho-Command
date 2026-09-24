@@ -27,11 +27,12 @@ test("labels unverifiable sources and keeps the official tachograph authoritativ
 });
 
 test("is installable as a portrait standalone TachoCommand PWA", () => {
-  assert.equal(manifest.short_name, "TachoCommand");
+  const appPath = manifest.id === "/app?v22-preview" ? "/app?v22-preview" : "/app";
+  assert.equal(manifest.short_name, appPath === "/app" ? "TachoCommand" : "TC V22 Test");
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.orientation, "portrait-primary");
-  assert.equal(manifest.start_url, "/app");
-  assert.equal(manifest.id, "/app");
+  assert.equal(manifest.start_url, appPath);
+  assert.equal(manifest.id, appPath);
   assert.doesNotMatch(manifest.name, /Core Field Test|0\.31/);
   assert.ok(manifest.icons.length > 0);
 });

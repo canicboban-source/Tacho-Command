@@ -6,6 +6,7 @@ export declare function runBrowserAppV2GoldenCardRead(input?: Readonly<{
     setItem: (key: string, value: string) => void;
   } | null;
   capturedAtIso?: string;
+  onProgress?: (progress: Readonly<{ submessages: number; byteLength: number; complete: boolean }>) => void;
   transportOptions?: Readonly<{
     requestTimeoutMs?: number;
     cardIdleTimeoutMs?: number;

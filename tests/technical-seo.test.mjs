@@ -11,9 +11,13 @@ const fieldTest = fs.readFileSync(new URL("../app/field-test/page.tsx", import.m
 const adminLayout = fs.readFileSync(new URL("../app/admin/layout.tsx", import.meta.url), "utf8");
 const localePage = fs.readFileSync(new URL("../app/[locale]/page.tsx", import.meta.url), "utf8");
 const landingPage = fs.readFileSync(new URL("../app/landing-page.tsx", import.meta.url), "utf8");
+const manifest = JSON.parse(fs.readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
 
 test("root metadata uses the verified production domain", () => {
-  assert.match(rootLayout, /metadataBase:\s*new URL\("https:\/\/tachocommand\.com"\)/);
+  const origin = manifest.id === "/app?v22-preview"
+    ? "https://tachocommand-app-v22-preview.canicboban.workers.dev"
+    : "https://tachocommand.com";
+  assert.ok(rootLayout.includes(`metadataBase: new URL("${origin}")`));
   assert.match(home, /canonical:\s*"\/"\s*,/);
   assert.match(home, /openGraph:/);
   assert.match(home, /twitter:/);

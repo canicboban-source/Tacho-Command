@@ -21,16 +21,29 @@ test("public root tells the field-proven 2026-09-16 product story", () => {
   assert.match(appPage, /AppV2Client/);
 });
 
-test("landing offers SR, EN and DE without fabricating field screenshots", () => {
+test("landing offers SR, EN and DE and labels illustrations as schematic", () => {
   assert.match(landing, /value="sr"/);
   assert.match(landing, /value="en"/);
   assert.match(landing, /value="de"/);
-  assert.match(landing, /PRODUCT VIEWS • FIELD DATA/);
-  assert.match(landing, /Finalni landing će dobiti i prave screenshotove produkcijskog UI-ja/);
+  assert.match(landing, /Shematski prikazi funkcija aplikacije/);
+  assert.match(landing, /Schematic views of app features/);
+  assert.match(landing, /Schematische Ansichten der App-Funktionen/);
   assert.doesNotMatch(landing, /screenshots\/cockpit\.(?:webp|png)/);
   assert.match(landing, /legal: \{ privacy:/);
   assert.match(launcher, /loadingLabel/);
   assert.match(launcher, /errorLabel/);
+});
+
+test("landing leads with proven card reading and starts pairing from the app", () => {
+  assert.match(landing, /Očitaj karticu telefonom/);
+  assert.match(landing, /Pregledaj poslednjih 56 dana/);
+  assert.match(landing, /Read your driver card on your phone/);
+  assert.match(landing, /Fahrerkarte mit dem Smartphone auslesen/);
+  assert.match(landing, /U aplikaciji pritisni „Poveži tahograf“/);
+  assert.match(landing, /Tap “Connect tachograph” in the app/);
+  assert.match(landing, /In der App „Tachograph verbinden“ antippen/);
+  assert.doesNotMatch(landing, /OLED|≤50 km|AT LINE|candidate infringement|9,99/);
+  assert.match(landing, /<Link className="tcx-primary" href="\/app"/);
 });
 
 test("landing keeps compatibility claims bounded to real field evidence", () => {
@@ -58,14 +71,19 @@ test("beginner install guide documents Chrome home-screen installation and direc
   assert.match(installGuide, /tachocommand-locale/);
 });
 
-test("landing install button opens the native Chrome prompt in one tap when available", () => {
-  assert.match(installGuide, /onClick=\{\(\) => installPrompt \? void installNow\(\) : setOpen\(true\)\}/);
+test("base install guide offers a native prompt and an actionable fallback", () => {
+  assert.match(installGuide, /onClick=\{\(\) => installed \? setOpen\(true\) : installPrompt \? void installNow\(\) : setOpen\(true\)\}/);
 });
 
-test("PWA identity opens the TachoCommand shell instead of the legacy field-test start URL", () => {
-  assert.equal(manifest.name, "TachoCommand — Driver Cockpit");
-  assert.equal(manifest.id, "/app");
-  assert.equal(manifest.start_url, "/app");
+test("PWA identity opens the app for both production and isolated V22 preview", () => {
+  if (manifest.id === "/app?v22-preview") {
+    assert.equal(manifest.name, "TachoCommand V22 — Preview (test)");
+    assert.equal(manifest.start_url, "/app?v22-preview");
+  } else {
+    assert.equal(manifest.name, "TachoCommand — Driver Cockpit");
+    assert.equal(manifest.id, "/app");
+    assert.equal(manifest.start_url, "/app");
+  }
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.theme_color, "#020304");
   assert.match(serviceWorker, /tachocommand-shell-v47-app-v3/);

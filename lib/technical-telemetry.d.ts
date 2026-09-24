@@ -16,6 +16,7 @@ export type TechnicalTelemetryPhase =
   | "transport"
   | "tester_present"
   | "live_read"
+  | "card_read"
   | "teardown";
 
 export type TechnicalTelemetryOutcome =
@@ -38,6 +39,7 @@ export type TechnicalTelemetryDeviceFamily =
 export type TechnicalTelemetrySanitizedEvent = Readonly<{
   schema: "tc-tech-v1";
   sessionId: string;
+  attemptCode: string | null;
   event: TechnicalTelemetryEventName;
   phase: TechnicalTelemetryPhase;
   outcome: TechnicalTelemetryOutcome;
@@ -56,8 +58,12 @@ export const TECHNICAL_TELEMETRY_PHASES: readonly TechnicalTelemetryPhase[];
 export const TECHNICAL_TELEMETRY_OUTCOMES: readonly TechnicalTelemetryOutcome[];
 export const TECHNICAL_TELEMETRY_DIDS: readonly TechnicalTelemetryDid[];
 export const TECHNICAL_TELEMETRY_DEVICE_FAMILIES: readonly TechnicalTelemetryDeviceFamily[];
+export const TECHNICAL_TELEMETRY_ATTEMPT_CODE_PATTERN: RegExp;
+export const TECHNICAL_TELEMETRY_ATTEMPT_CODE_ALPHABET: string;
 
 export function normalizeTechnicalTelemetrySessionId(value: unknown): string | null;
+export function normalizeTechnicalTelemetryAttemptCode(value: unknown): string | null;
+export function createTechnicalTelemetryAttemptCode(cryptoImpl?: { getRandomValues: (array: Uint8Array) => Uint8Array }): string;
 export function sanitizeTechnicalTelemetryEvent(input: unknown): TechnicalTelemetrySanitizedEvent | null;
 export function sanitizeTechnicalTelemetryBatch(input: unknown, maxBatch?: number): readonly TechnicalTelemetrySanitizedEvent[];
 export function technicalTelemetryRetentionCutoffEpochSeconds(nowMs?: number): number;

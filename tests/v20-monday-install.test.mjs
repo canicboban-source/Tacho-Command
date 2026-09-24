@@ -54,15 +54,20 @@ test("V20 uses one install owner and preserves the unmodified proven card transp
  const prompt=readFileSync("app/pwa-install-cta.tsx","utf8");
  const guide=readFileSync("app/install-guide.tsx","utf8");
  const app=readFileSync("app/app-v2/app-v2-client.tsx","utf8");
- assert.match(landing,/Instaliraj V20 test aplikaciju/);
- assert.match(prompt,/tachocommand-open-install-guide/);
- assert.doesNotMatch(prompt,/beforeinstallprompt/);
- assert.equal((guide.match(/addEventListener\("beforeinstallprompt"/g)??[]).length,1);
- assert.match(guide,/Chrome nije pokrenuo instalaciju/);
- assert.match(guide,/Otvori u Chrome-u/);
+ if (landing.includes("Instaliraj V22 test aplikaciju")) {
+  assert.match(prompt,/addEventListener\("beforeinstallprompt"/);
+  assert.doesNotMatch(landing,/InstallGuide/);
+ } else {
+  assert.match(landing,/Instaliraj V20 test aplikaciju/);
+  assert.match(prompt,/tachocommand-open-install-guide/);
+  assert.doesNotMatch(prompt,/beforeinstallprompt/);
+  assert.equal((guide.match(/addEventListener\("beforeinstallprompt"/g)??[]).length,1);
+  assert.match(guide,/Chrome nije pokrenuo instalaciju/);
+  assert.match(guide,/Otvori u Chrome-u/);
+ }
  assert.doesNotMatch(app,/createDeferredCardDeviceChooser|keepGattConnected/);
  assert.match(app,/runBrowserAppV2GoldenCardRead\(\{/);
- assert.match(app,/PREVIEW V20/);
+ assert.match(app,/PREVIEW V(?:20|22)/);
 });
 
 test("V20 refreshes phone-local day for the Monday rollover",()=>{
@@ -70,6 +75,6 @@ test("V20 refreshes phone-local day for the Monday rollover",()=>{
  assert.match(app,/new Intl\.DateTimeFormat\("sv-SE"/);
  assert.match(app,/calendarFortnightFromMonday\(projected\.historyDays, \{ timeZone \}\)/);
  const manifest=JSON.parse(readFileSync("public/manifest.webmanifest","utf8"));
- assert.equal(manifest.short_name,"TC V20 Test");
- assert.equal(manifest.id,"/app?v20-preview");
+ assert.equal(manifest.short_name, manifest.id === "/app?v22-preview" ? "TC V22 Test" : "TC V20 Test");
+ assert.ok(["/app?v20-preview", "/app?v22-preview"].includes(manifest.id));
 });

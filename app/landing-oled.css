@@ -5,7 +5,7 @@
   --tcx-line: rgba(255,255,255,.09);
   --tcx-line-strong: rgba(255,255,255,.15);
   --tcx-text: #f8fafc;
-  --tcx-muted: #8d96a4;
+  --tcx-muted: #c5ced8;
   --tcx-cyan: #62d9ff;
   --tcx-green: #49e5a4;
   --tcx-amber: #ffc261;
@@ -16,6 +16,7 @@
     radial-gradient(circle at 50% -15%, rgba(68,130,165,.13), transparent 31rem),
     linear-gradient(180deg, #020304 0%, #030405 55%, #020304 100%);
   color: var(--tcx-text);
+  font-size: 16px;
 }
 
 .tcx-shell * { box-sizing: border-box; }
@@ -134,6 +135,10 @@
   -webkit-text-fill-color: transparent;
 }
 .tcx-hero-copy > p { max-width: 650px; margin: 0; color: #9aa3af; font-size: clamp(.98rem, 1.6vw, 1.12rem); line-height: 1.65; }
+.tcx-safety-note { display: flex; gap: 10px; align-items: flex-start; max-width: 650px; margin-top: 18px;
+  padding: 12px 14px; border: 1px solid rgba(75,220,163,.24); border-radius: 12px;
+  background: rgba(75,220,163,.055); color: #b8c3bf; font-size: .78rem; line-height: 1.55; }
+.tcx-safety-note strong { color: var(--tcx-green); }
 .tcx-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 .tcx-primary, .tcx-secondary {
   min-height: 46px;
@@ -155,6 +160,9 @@
 }
 .tcx-secondary { border: 1px solid var(--tcx-line-strong); color: #dce2e8; background: rgba(255,255,255,.035); }
 .tcx-secondary span { color: var(--tcx-cyan); }
+.tcx-install-cta { display: inline-flex; flex-direction: column; gap: 7px; max-width: min(100%, 410px); }
+.tcx-install-cta > .tcx-secondary { width: 100%; }
+.tcx-install-cta small { font-size: .76rem; color: #bbd1c8; line-height: 1.55; }
 .tcx-hero-trustline { display: flex; flex-wrap: wrap; gap: 7px 15px; margin-top: 22px; color: #656e79; font-size: .62rem; font-weight: 750; }
 .tcx-hero-trustline span::first-letter { color: var(--tcx-green); }
 
@@ -185,6 +193,9 @@
   background: linear-gradient(150deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
 }
 .tcx-status-card { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-radius: 19px; }
+.tcx-preview-secondary { margin-top: 12px; }
+.tcx-preview-secondary strong { color: #dce2e8; font-size: 1.08rem; }
+.tcx-phone .tcx-timeline-mini { margin-top: 32px; }
 .tcx-status-card small, .tcx-warning-card small, .tcx-mini small { display: block; color: #646d78; font-size: .49rem; font-weight: 900; letter-spacing: .1em; }
 .tcx-status-card strong { display: block; margin-top: 5px; color: #93efc6; font-size: 1.5rem; letter-spacing: -.04em; }
 .tcx-drive-icon { color: var(--tcx-green); text-shadow: 0 0 18px var(--tcx-green); font-size: 1.25rem; }
@@ -248,6 +259,10 @@
 .tcx-timeline-mini div::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px); background-size: 8.33% 100%; }
 .tcx-timeline-mini span, .tcx-timeline-mini b { float: left; height: 100%; }
 .tcx-timeline-mini span { background: rgba(73,229,164,.72); }.tcx-timeline-mini b { background: rgba(73,229,164,.08); }
+.tcx-period-preview { display: grid; gap: 10px; margin-top: 42px; }
+.tcx-period-preview div { display: flex; justify-content: space-between; align-items: center; padding: 18px; border: 1px solid rgba(255,255,255,.07); border-radius: 12px; color: #aab2bd; }
+.tcx-period-preview strong { color: #e7ebf0; }
+.tcx-beta-status { padding: 14px 16px; border: 1px solid rgba(255,255,255,.13); border-radius: 12px; }
 .tcx-alert-stack { display: grid; gap: 9px; margin-top: 42px; }
 .tcx-alert-stack div { display: grid; gap: 5px; padding: 16px; border: 1px solid rgba(255,255,255,.07); border-radius: 13px; background: rgba(255,255,255,.02); }
 .tcx-alert-stack b { color: #cbd2da; font-size: .57rem; letter-spacing: .12em; }.tcx-alert-stack span { color: #6e7782; font-size: .7rem; }
@@ -336,4 +351,57 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tcx-shell *, .tcx-shell *::before, .tcx-shell *::after { scroll-behavior: auto !important; transition: none !important; }
+}
+
+/* Readable copy on the dark landing, including small screens in daylight. */
+.tcx-nav-links a, .tcx-language, .tcx-app-link,
+.tcx-proof-badge, .tcx-kicker, .tcx-hero-trustline,
+.tcx-compat-card > span, .tcx-level > span, .tcx-screen-head small {
+  color: #d0d9e3;
+  font-size: .875rem;
+  letter-spacing: normal;
+}
+.tcx-hero h1 span { color: #ecf5fb; background: none; -webkit-text-fill-color: currentColor; }
+.tcx-hero-copy > p, .tcx-safety-note, .tcx-proof-grid span,
+.tcx-value-grid p, .tcx-product-copy p, .tcx-step-list p,
+.tcx-trouble-grid p, .tcx-trust-grid p, .tcx-level p,
+.tcx-demo-card p, .tcx-faq-list details p, .tcx-footer p,
+.tcx-compat-card ul, .tcx-price-card ul, .tcx-price-row small,
+.tcx-pair-card > p {
+  color: #c5ced8;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.tcx-primary, .tcx-secondary, .tcx-faq-list summary,
+.tcx-trouble-grid strong, .tcx-value-grid h3, .tcx-step-list h3,
+.tcx-product-copy h3, .tcx-trust-grid h3, .tcx-compat-card li {
+  font-size: 1rem;
+}
+.tcx-phone-top, .tcx-phone-brand small, .tcx-status-card small,
+.tcx-phone-footer, .tcx-screen-big small, .tcx-pair-device small,
+.tcx-pair-phone small, .tcx-pair-device span, .tcx-pair-phone span {
+  color: #c3cdd7;
+  font-size: .875rem;
+  letter-spacing: normal;
+}
+.tcx-proof-grid { grid-template-columns: repeat(2, 1fr); }
+.tcx-value-grid article { min-height: 190px; }
+.tcx-value-grid h3 { margin-top: 10px; }
+.tcx-product-copy { display: block; }
+.tcx-step-list article { display: block; }
+.tcx-demo-card h3 { margin: 0 0 12px; }
+.tcx-footer > div:last-child, .tcx-release { color: #c5ced8; font-size: .875rem; }
+.tcx-hero-trustline { gap: 8px 18px; }
+.tcx-safety-note { border-color: rgba(75,220,163,.45); }
+.tcx-shell a:focus-visible, .tcx-shell button:focus-visible,
+.tcx-shell select:focus-visible, .tcx-shell summary:focus-visible {
+  outline: 2px solid var(--tcx-cyan);
+  outline-offset: 3px;
+}
+@media (max-width: 680px) {
+  .tcx-hero-copy > p { font-size: 1rem; }
+  .tcx-proof-grid { grid-template-columns: 1fr; }
+  .tcx-value-grid article { min-height: auto; }
+  .tcx-value-grid h3 { margin-top: 10px; }
+  .tcx-phone { width: min(342px, 100%); }
 }

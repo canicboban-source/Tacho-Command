@@ -65,6 +65,7 @@ export async function GET(request: Request) {
       dailyRows,
       technicalSummary,
       outcomeCounts,
+      cardOutcomeCounts,
     ] = await Promise.all([
       env.DB.prepare(
         "SELECT COUNT(*) AS total_events, COUNT(DISTINCT visit_id) AS sessions, MAX(created_at) AS last_event_at FROM product_analytics_events WHERE created_at >= ?1",
@@ -87,12 +88,16 @@ export async function GET(request: Request) {
       env.DB.prepare(
         "SELECT outcome AS key, COUNT(*) AS count FROM technical_telemetry_events WHERE created_at >= ?1 GROUP BY outcome ORDER BY count DESC",
       ).bind(since30).all(),
+      env.DB.prepare(
+        "SELECT outcome AS key, COUNT(*) AS count FROM technical_telemetry_events WHERE phase = 'card_read' AND created_at >= ?1 GROUP BY outcome ORDER BY count DESC",
+      ).bind(since30).all(),
     ]);
 
     const productEvents = rowsToCounts((eventCounts.results ?? []) as CountRow[]);
     const sourceEvents = rowsToCounts((sourceCounts.results ?? []) as CountRow[]);
     const localeEvents = rowsToCounts((localeCounts.results ?? []) as CountRow[]);
     const technicalOutcomes = rowsToCounts((outcomeCounts.results ?? []) as CountRow[]);
+    const cardOutcomes = rowsToCounts((cardOutcomeCounts.results ?? []) as CountRow[]);
 
     return json({
       status: "ready",
@@ -123,6 +128,7 @@ export async function GET(request: Request) {
         totalEvents: numeric(technicalSummary?.total_events),
         lastEventAt: numeric(technicalSummary?.last_event_at) || null,
         outcomes: technicalOutcomes,
+        cardOutcomes,
       },
       privacy: {
         aggregateOnly: true,

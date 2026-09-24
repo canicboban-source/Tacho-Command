@@ -32,6 +32,8 @@ test("admin overview exposes aggregates only, never visit or support-code rows",
   assert.doesNotMatch(overview, /driver_name|card_number|registration|latitude|longitude|raw_bytes/i);
   assert.match(overview, /productRetentionDays:\s*90/);
   assert.match(overview, /technicalRetentionDays:\s*60/);
+  assert.match(overview, /phase = 'card_read'/);
+  assert.match(dashboard, /overview\.technical\.cardOutcomes\?\.complete/);
 });
 
 test("admin login uses env secrets and strict HttpOnly session cookie", () => {
