@@ -1,0 +1,4 @@
+Promote TachoCommand 1.0.0-beta.3 same-origin PWA manifest fix.
+Previous production Worker: 2cca28a9-6fca-4483-aa8c-3140c318dc9f.
+Isolated preview Chrome check: GitHub Actions 36032915266.
+No change to tachograph reader, driver card data, or production database schema.
