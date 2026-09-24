@@ -411,6 +411,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .legal-shell h2 { margin: 2rem 0 .55rem; font-size: 1rem; }
 .legal-shell article p { color: #91a3b6; font-size: .74rem; line-height: 1.7; }
 .legal-back { color: #96dff5 !important; font-size: .7rem; font-weight: 800; }
+.legal-language { display: flex; align-items: center; gap: .7rem; color: #91a3b6; font-size: .85rem; }
+.legal-language select { color: #fff; background: #0c1b2b; border: 1px solid #45667d; border-radius: .5rem; padding: .45rem .7rem; }
 
 .access-ribbon { position: fixed; z-index: 70; top: .7rem; left: 50%; width: min(calc(100% - 1.4rem), 500px); min-height: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; transform: translateX(-50%); padding: .45rem .65rem; border: 1px solid rgba(56,211,159,.28); border-radius: .65rem; background: rgba(5,15,24,.9); backdrop-filter: blur(16px); pointer-events: none; }
 .access-ribbon span { display: flex; align-items: center; gap: .4rem; color: #8ce9c9; font-size: .5rem; font-weight: 900; letter-spacing: .1em; }
