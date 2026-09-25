@@ -7,6 +7,7 @@ export type AppV2FieldTransport = Readonly<{
     firmware?: string;
   }>;
   connectDurationMs: number;
+  handshakeDurationMs: number;
   isConnected: () => boolean;
   sendUds: (payload: readonly number[], timeoutMs?: number) => Promise<readonly number[] | null>;
   close: () => Promise<void>;

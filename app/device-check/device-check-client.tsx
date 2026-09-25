@@ -45,32 +45,20 @@ export default function DeviceCheckClient() {
     setFailureReport(null);
     setCopied(false);
     const startedAt = performance.now();
-    const responseTimesMs: number[] = [];
     let phase = "izbor Bluetooth uređaja i povezivanje";
     setStage("Izaberi tahograf u Chrome Bluetooth dijalogu…");
     let transport: Awaited<ReturnType<typeof openBrowserAppV2FieldTransport>> | null = null;
     try {
       transport = await openBrowserAppV2FieldTransport({ timeoutMs: 4000, settleMs: 0 });
-      phase = "dijagnostički odgovori";
-      setStage("Veza je otvorena. Merim tri odgovora tahografa…");
-      for (let index = 0; index < 3; index++) {
-        if (!transport.isConnected()) {
-          throw new Error("Bluetooth veza se prekinula tokom provere.");
-        }
-        const start = performance.now();
-        const reply = await transport.sendUds([0x3e, 0x00], 4000);
-        if (!reply || reply[0] !== 1 || reply[1] !== 1 || reply[2] !== 0x7e) {
-          throw new Error("Tahograf nije potvrdio dijagnostički odgovor " + (index + 1) + "/3.");
-        }
-        responseTimesMs.push(Math.round(performance.now() - start));
-      }
+      phase = "potvrda početnog odgovora";
+      setStage("Tahograf je potvrdio početni dijagnostički odgovor.");
       setResult({
         name: transport.deviceLabel,
         ...transport.deviceInformation,
         connectDurationMs: transport.connectDurationMs,
-        responseTimesMs,
+        responseTimesMs: [transport.handshakeDurationMs],
         interruptions: 0,
-        status: "Tri odgovora potvrđena",
+        status: "Početni odgovor potvrđen",
         checkedAt: new Date().toLocaleString("sr-RS"),
       });
       setStage("Provera završena");
@@ -81,8 +69,8 @@ export default function DeviceCheckClient() {
         checkedAt: new Date().toLocaleString("sr-RS"),
         phase,
         elapsedMs: Math.round(performance.now() - startedAt),
-        confirmedResponses: responseTimesMs.length,
-        responseTimesMs,
+        confirmedResponses: transport ? 1 : 0,
+        responseTimesMs: transport ? [transport.handshakeDurationMs] : [],
         disconnected: transport ? !transport.isConnected() : null,
         error: message,
       });
@@ -125,7 +113,7 @@ export default function DeviceCheckClient() {
       {failureReport && <section style={panel}>
         <h2 style={{ marginTop: 0 }}>Neuspešan pokušaj</h2>
         <p>Faza: {String(failureReport.phase)} · Trajanje: {String(failureReport.elapsedMs)} ms ·
-          Potvrđenih odgovora: {String(failureReport.confirmedResponses)}/3</p>
+          Potvrđen početni odgovor: {failureReport.confirmedResponses ? "da" : "ne"}</p>
         <p>Prekid veze: {failureReport.disconnected === null ? "nije utvrđeno" : failureReport.disconnected ? "da" : "nije potvrđen"}</p>
         <button type="button" onClick={copy} style={button}>{copied ? "Kopirano" : "Kopiraj dijagnostiku"}</button>
       </section>}
@@ -139,12 +127,13 @@ export default function DeviceCheckClient() {
             ["Serijski broj", result.serialNumber || "Nedostupno"],
             ["Firmver", result.firmware || "Nedostupno"],
             ["GATT povezivanje", result.connectDurationMs + " ms"],
-            ["Odgovori", result.responseTimesMs.join(" / ") + " ms"],
+            ["Početni odziv", result.responseTimesMs[0] + " ms"],
             ["Prekidi", String(result.interruptions)],
           ] as const).map(([label, value]) => <div key={label}><dt style={{ color: "#a2bcc8" }}>{label}</dt><dd style={{ margin: "4px 0", fontWeight: 750 }}>{value}</dd></div>)}
         </dl>
         <p style={{ color: "#bfd0d7", lineHeight: 1.5 }}>
-          Ova vremena mere odziv protokola, ne jačinu Bluetooth signala. Chrome ne izlaže RSSI ovoj stranici.
+          Ovo vreme meri jedan potvrđen odgovor protokola, ne jačinu ni stabilnost Bluetooth signala.
+          Chrome ne izlaže RSSI ovoj stranici.
           „Nedostupno” znači da uređaj nije objavio podatak preko standardnog Bluetooth servisa.
         </p>
         <button type="button" onClick={copy} style={button}>{copied ? "Kopirano" : "Kopiraj rezultat"}</button>
