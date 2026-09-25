@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/app-v3-driver-instrument-20260920
+      - fix/safe-live-speed-gate-20260921
   workflow_dispatch:
 
 permissions:

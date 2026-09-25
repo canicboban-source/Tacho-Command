@@ -16,6 +16,7 @@ type ProductControls = Readonly<{
     byteLength: number;
     complete: boolean;
   }> | null;
+  cardAttemptCode: string | null;
   versionLine: string;
   onConnect: () => void;
   onReadCard: () => void;
@@ -148,7 +149,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
           <strong>
             {controls.phase === "connecting" && "Povezivanje i LIVE očitavanje…"}
             {controls.phase === "card-reading" && "Sačekajte završetak očitavanja kartice"}
-            {controls.phase === "connected" && "LIVE podaci su sačuvani"}
+            {controls.phase === "connected" && "LIVE veza je aktivna"}
             {controls.phase === "error" && "LIVE očitavanje nije završeno"}
             {controls.phase === "idle" && "Poveži tahograf za LIVE podatke"}
           </strong>
@@ -157,11 +158,11 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
         <button
           type="button"
           onClick={controls.onConnect}
-          disabled={controls.phase === "connecting" || controls.phase === "card-reading"}
+          disabled={controls.phase === "connecting" || controls.phase === "card-reading" || controls.phase === "connected"}
         >
           {controls.phase === "connecting" && "Povezujem…"}
           {controls.phase === "card-reading" && "Kartica se očitava…"}
-          {controls.phase === "connected" && "Osveži LIVE"}
+          {controls.phase === "connected" && "LIVE povezano"}
           {controls.phase === "error" && "Ponovi LIVE"}
           {controls.phase === "idle" && "Poveži tahograf"}
         </button>
@@ -238,6 +239,7 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
               </div>
             </div>
           ) : state.cardReadComplete ? <small>{state.historyDaysAvailable}/56 dana sačuvano</small> : null}
+          {controls.cardAttemptCode ? <small>Šifra pokušaja: <strong>{controls.cardAttemptCode}</strong></small> : null}
         </div>
         <button
           type="button"
@@ -255,7 +257,7 @@ function PeriodsScreen({ state }: Readonly<{ state: FieldProvenProductState }>) 
   const periods = [
     ["DANAS", formatMinutes(state.todayDrivingMinutes), "Dnevna vožnja"],
     ["OVA NEDELJA", formatMinutes(state.weekDrivingMinutes), "Tekuća nedelja"],
-    ["DVE NEDELJE", formatMinutes(state.fortnightDrivingMinutes), "Iz istorije kartice"],
+    ["DVE NEDELJE", formatMinutes(state.fortnightDrivingMinutes), "Prethodna + tekuća"],
   ] as const;
 
   return (

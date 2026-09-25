@@ -31,10 +31,10 @@ test("V3 keeps driver-facing language concise", () => {
 test("V3 separates the primary LIVE action from the occasional card read", () => {
   assert.ok(client.includes("onClick={controls.onConnect}"));
   assert.ok(client.includes("onClick={controls.onReadCard}"));
-  assert.ok(client.includes("Osveži LIVE"));
+  assert.ok(client.includes("LIVE povezano"));
   assert.ok(client.includes("Očitaj karticu"));
   assert.equal(client.includes("Pošalji dijagnostiku"), false);
-  assert.equal(client.includes("Šifra pokušaja:"), false);
+  assert.ok(client.includes("Šifra pokušaja:"));
 });
 
 test("card read shows truthful live transfer counters without a fabricated total", () => {

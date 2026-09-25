@@ -23,6 +23,41 @@ test("App V2 prevents concurrent LIVE and CARD Bluetooth sessions", async () => 
   assert.match(source, /liveRunState === "running"\s*\? "connecting"/);
 });
 
+test("App V3 closes LIVE before the dedicated golden card session", async () => {
+  const source = await readFile(clientUrl, "utf8");
+  assert.match(source, /keepTransportOpen: true/);
+  assert.match(source, /transport\.assertStationary\(\)/);
+  assert.match(source, /await transport\.close\(\)/);
+  assert.doesNotMatch(source, /const selectedDevice = transport\.device/);
+  assert.doesNotMatch(source, /device: selectedDevice/);
+  assert.match(source, /window\.setInterval/);
+  assert.match(source, /setLiveConnected\(true\)/);
+  assert.match(source, /connected: liveConnected/);
+  assert.match(source, /\["live", "incomplete"\]\.includes\(result\.status\)/);
+  assert.match(source, /refreshed\.status !== "incomplete"/);
+});
+
+test("App V3 holds a screen wake lock only while the card read is active", async () => {
+  const source = await readFile(clientUrl, "utf8");
+  assert.match(source, /wakeLock\.request\("screen"\)/);
+  assert.match(source, /wakeLock\?\.release\(\)/);
+  assert.match(source, /\.finally\(async \(\) =>/);
+});
+
+test("App V2 derives visible LIVE state from the retained transport", async () => {
+  const clientSource = await readFile(clientUrl, "utf8");
+  const uiSource = await readFile(
+    new URL("../app/app/field-proven-premium-ui.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(clientSource, /setLiveConnected\(false\)/);
+  assert.match(clientSource, /liveConnected\s*\? "connected"/);
+  assert.match(uiSource, /LIVE veza je aktivna/);
+  assert.match(uiSource, /LIVE povezano/);
+  assert.match(uiSource, /controls\.phase === "connected"/);
+});
+
 test("App V2 keeps card transport details out of UI source", async () => {
   const source = await readFile(clientUrl, "utf8");
 

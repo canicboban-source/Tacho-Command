@@ -98,6 +98,19 @@ test("adapter preserves duration-only history without inventing absolute timesta
   assert.ok(Math.abs(total - 100) < 0.000001);
 });
 
+test("adapter presents card history newest day first", () => {
+  const state = createFieldProvenProductState({
+    card: {
+      historyDays: [
+        { dateIso: "2026-09-21", dateLabel: "21.09.", drivingMinutes: 60, segments: [] },
+        { dateIso: "2026-09-22", dateLabel: "22.09.", drivingMinutes: 90, segments: [] },
+      ],
+    },
+  });
+
+  assert.deepEqual(state.historyDays.map((day) => day.dateIso), ["2026-09-22", "2026-09-21"]);
+});
+
 test("adapter accepts parser-native activity segments without losing absolute timing", () => {
   const state = createFieldProvenProductState({
     card: {

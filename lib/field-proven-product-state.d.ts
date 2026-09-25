@@ -20,6 +20,7 @@ export type FieldProvenHistorySegment = Readonly<{
 }>;
 
 export type FieldProvenHistoryDay = Readonly<{
+  dateIso: string | null;
   dateLabel: string;
   drivingMinutes: number;
   activityTotals: Readonly<Record<FieldProvenTimelineKind, number>>;
