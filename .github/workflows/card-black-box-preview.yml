@@ -43,26 +43,11 @@ jobs:
         run: |
           set -euo pipefail
           npx wrangler d1 list --json > /tmp/tc-d1-list.json
-          TC_PREVIEW_DB_UUID="$(node --input-type=module <<'NODE'
-          import { readFileSync } from "node:fs";
-          const name = process.env.TC_PREVIEW_DB;
-          const rows = JSON.parse(readFileSync("/tmp/tc-d1-list.json", "utf8"));
-          const match = rows.find((row) => row.name === name);
-          if (match?.uuid) process.stdout.write(match.uuid);
-          NODE
-          )"
+          TC_PREVIEW_DB_UUID="$(node -e 'const rows=require("/tmp/tc-d1-list.json"); const match=rows.find((row)=>row.name===process.env.TC_PREVIEW_DB); if(match?.uuid) process.stdout.write(match.uuid)')"
           if [ -z "${TC_PREVIEW_DB_UUID:-}" ]; then
             npx wrangler d1 create "$TC_PREVIEW_DB" --location weur --binding DB
             npx wrangler d1 list --json > /tmp/tc-d1-list.json
-            TC_PREVIEW_DB_UUID="$(node --input-type=module <<'NODE'
-            import { readFileSync } from "node:fs";
-            const name = process.env.TC_PREVIEW_DB;
-            const rows = JSON.parse(readFileSync("/tmp/tc-d1-list.json", "utf8"));
-            const matches = rows.filter((row) => row.name === name);
-            if (matches.length !== 1 || !matches[0].uuid) throw new Error("Isolated preview D1 identity is ambiguous");
-            process.stdout.write(matches[0].uuid);
-            NODE
-            )"
+            TC_PREVIEW_DB_UUID="$(node -e 'const rows=require("/tmp/tc-d1-list.json"); const matches=rows.filter((row)=>row.name===process.env.TC_PREVIEW_DB); if(matches.length!==1||!matches[0].uuid) throw new Error("Isolated preview D1 identity is ambiguous"); process.stdout.write(matches[0].uuid)')"
           fi
           echo "TC_PREVIEW_DB_UUID=$TC_PREVIEW_DB_UUID" >> "$GITHUB_ENV"
 
