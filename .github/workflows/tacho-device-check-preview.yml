@@ -1,0 +1,66 @@
+name: Isolated tachograph device check
+on:
+  push:
+    branches:
+      - fix/tacho-device-diagnostics-20260925
+permissions:
+  contents: read
+concurrency:
+  group: tachocommand-device-check-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: node --test tests/*.test.mjs
+      - name: Remove production routes and database bindings
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "dist/server/wrangler.json";
+          const config = JSON.parse(readFileSync(path, "utf8"));
+          config.name = "tachocommand-device-check-preview";
+          config.d1_databases = [];
+          config.r2_buckets = [];
+          config.kv_namespaces = [];
+          delete config.routes;
+          delete config.route;
+          delete config.zone_id;
+          delete config.custom_domains;
+          delete config.images;
+          config.observability = { enabled: false };
+          if (config.name === "tachocommand" || config.d1_databases.length
+              || config.routes || config.route || config.zone_id || config.custom_domains) {
+            throw new Error("Device check must not touch production");
+          }
+          writeFileSync(path, JSON.stringify(config));
+          NODE
+      - name: Publish only the isolated Worker
+        run: npx wrangler deploy --config dist/server/wrangler.json
+      - name: Check diagnostics page responds
+        run: |
+          node --input-type=module <<'NODE'
+          const url = "https://tachocommand-device-check-preview.canicboban.workers.dev/device-check";
+          for (let attempt = 0; attempt < 12; attempt++) {
+            const response = await fetch(url, { cache: "no-store" });
+            const html = await response.text();
+            if (response.ok && html.includes("Provera tahografa i veze")) {
+              console.log("Device check preview ready:", url);
+              process.exit(0);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+          throw new Error("Device check preview is not serving the diagnostics page");
+          NODE

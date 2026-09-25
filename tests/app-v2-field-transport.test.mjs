@@ -27,7 +27,7 @@ function characteristic(uuid, onWrite) {
   };
 }
 
-function bluetoothFixture() {
+function bluetoothFixture({ deviceInformation = false } = {}) {
   const writes = [];
   let disconnected = 0;
   let fifo;
@@ -61,7 +61,16 @@ function bluetoothFixture() {
         getPrimaryServices: async () => [{
           uuid: TACHO_DIAGNOSTICS_SERVICE_UUID,
           getCharacteristics: async () => [fifo, credits],
-        }],
+        }, ...(deviceInformation ? [{
+          uuid: "0000180a-0000-1000-8000-00805f9b34fb",
+          getCharacteristic: async (uuid) => ({
+            readValue: async () => {
+              const text = uuid === 0x2a25 ? "DTCO-12345" : uuid === 0x2a24 ? "DTCO 4.1a" : "";
+              const data = new TextEncoder().encode(text);
+              return new DataView(data.buffer);
+            },
+          }),
+        }] : [])],
       }),
       disconnect: () => { disconnected += 1; },
     },
@@ -93,6 +102,18 @@ test("transport factory establishes FIFO/Credits, validates TesterPresent and ex
   await transport.close();
   assert.equal(fixture.disconnected, 1);
   assert.ok(fixture.writes.some(([kind, bytes]) => kind === "credits" && bytes[0] === 0xff));
+});
+
+test("reads optional device identity locally without requiring it for the protocol", async () => {
+  const fixture = bluetoothFixture({ deviceInformation: true });
+  const transport = await openAppV2FieldTransport({
+    bluetooth: fixture.bluetooth, timeoutMs: 100, settleMs: 0,
+  });
+  assert.equal(transport.deviceInformation.serialNumber, "DTCO-12345");
+  assert.equal(transport.deviceInformation.model, "DTCO 4.1a");
+  assert.equal(typeof transport.connectDurationMs, "number");
+  assert.ok(fixture.writes.every(([kind, bytes]) => kind !== "fifo" || bytes[2] === 0x3e));
+  await transport.close();
 });
 
 test("transport factory serializes GATT writes and rejects concurrent UDS requests", async () => {
