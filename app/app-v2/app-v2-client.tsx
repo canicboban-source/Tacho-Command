@@ -108,6 +108,7 @@ export default function AppV2Client() {
   const [lastLiveSnapshot, setLastLiveSnapshot] = useState<Readonly<Record<string, unknown>> | null>(null);
   const [cardSession, setCardSession] = useState(() => createAppV2CardSession());
   const [cardReadProgress, setCardReadProgress] = useState<CardReadProgress | null>(null);
+  const [cardHandoffPreparing, setCardHandoffPreparing] = useState(false);
   const [cardAttemptCode, setCardAttemptCode] = useState<string | null>(null);
   const liveTransportRef = useRef<PersistentLiveTransport | null>(null);
   const speedGuardTimerRef = useRef<number | null>(null);
@@ -230,6 +231,11 @@ export default function AppV2Client() {
               latestDiagnostics.telemetryAcceptedCount ?? stableLive.telemetryAcceptedCount,
           },
       card: cardState ?? {},
+      profile: {
+        continuousThresholdMinutes: 270,
+        continuousWarningMinutes: 255,
+        workBreakThresholdMinutes: 360,
+      },
       localeLabel: "SR · Srpski",
     });
   }, [cardState, lastLiveSnapshot, liveConnected, liveRunState, liveSession]);
@@ -300,17 +306,20 @@ export default function AppV2Client() {
     // refresh request may already be in flight, so wait for that single UDS
     // operation to finish rather than racing another request against it.
     cardReadBusyRef.current = true;
+    setCardHandoffPreparing(true);
     stopSpeedGuard();
     try {
       await waitForLiveMonitorIdle(() => udsMonitorBusyRef.current);
     } catch (error) {
       cardReadBusyRef.current = false;
+      setCardHandoffPreparing(false);
       await closePersistentLive(error instanceof Error ? error.message : "LIVE provera nije završena.");
       return;
     }
 
     if (liveTransportRef.current !== transport || transport.isConnected?.() === false) {
       cardReadBusyRef.current = false;
+      setCardHandoffPreparing(false);
       await closePersistentLive("LIVE veza je završena pre očitavanja kartice.");
       return;
     }
@@ -321,6 +330,7 @@ export default function AppV2Client() {
     const selectedCardDevice = transport.device;
     if (!selectedCardDevice?.gatt) {
       cardReadBusyRef.current = false;
+      setCardHandoffPreparing(false);
       setLiveSession(createAppV2LiveSession({
         phase: "error",
         errorText: "Tahograf iz LIVE veze nije dostupan za očitavanje kartice.",
@@ -333,6 +343,7 @@ export default function AppV2Client() {
       await transport.assertStationary();
     } catch (error) {
       cardReadBusyRef.current = false;
+      setCardHandoffPreparing(false);
       await closePersistentLive(error instanceof Error ? error.message : "Brzina nije potvrđena — BLE veza je prekinuta.");
       return;
     }
@@ -348,6 +359,7 @@ export default function AppV2Client() {
       await closeLiveForCard(transport);
     } catch {
       cardReadBusyRef.current = false;
+      setCardHandoffPreparing(false);
       setLiveSession(createAppV2LiveSession({
         phase: "error",
         errorText: "LIVE veza nije uredno zatvorena pre očitavanja kartice.",
@@ -357,6 +369,7 @@ export default function AppV2Client() {
     }
 
     const readingSession = beginAppV2CardRead(cardSession);
+    setCardHandoffPreparing(false);
     setCardSession(readingSession);
     setCardAttemptCode(null);
     setCardReadProgress(Object.freeze({ submessages: 0, byteLength: 0, complete: false }));
@@ -395,6 +408,8 @@ export default function AppV2Client() {
           controls={{
             phase: cardSession.busy
               ? "card-reading"
+              : cardHandoffPreparing
+                ? "card-preparing"
               : liveRunState === "running"
                 ? "connecting"
                 : liveConnected

@@ -24,6 +24,7 @@ test("adapter maps proven LIVE snapshot values without inventing data", () => {
       lastLiveReadLabel: "06:02",
       activity: "rest",
       continuousDrivingSec: 3600,
+      cumulativeBreakSec: 900,
       dailyDrivingSec: 7200,
       weeklyDrivingSec: 18000,
       telemetryAcceptedCount: 6,
@@ -32,6 +33,7 @@ test("adapter maps proven LIVE snapshot values without inventing data", () => {
     profile: {
       continuousThresholdMinutes: 270,
       continuousWarningMinutes: 255,
+      workBreakThresholdMinutes: 360,
     },
   });
 
@@ -43,6 +45,9 @@ test("adapter maps proven LIVE snapshot values without inventing data", () => {
   assert.equal(state.continuousThresholdLabel, "4 h 30 min");
   assert.equal(state.continuousRemainingLabel, "3 h 30 min");
   assert.equal(state.continuousBand, "safe");
+  assert.equal(state.cumulativeBreakMinutes, 15);
+  assert.equal(state.workBreakThresholdLabel, "6 h 00 min");
+  assert.equal(state.workBreakConfirmed, false);
   assert.equal(state.telemetrySentCount, 6);
   assert.equal(state.attemptCode, "TC-7F2K8M");
 });

@@ -93,6 +93,12 @@ test("visual source uses clearer panel lines and state-driven continuous-driving
   assert.ok(client.includes("state.continuousBand"));
   assert.ok(client.includes("styles.progressWarning"));
   assert.ok(client.includes("styles.progressLimit"));
+  assert.ok(client.includes("PAUZE"));
+  assert.ok(client.includes("Vožnja · pauza do 4 h 30 min"));
+  assert.ok(client.includes("Radno vreme · pauza do 6 h"));
+  assert.ok(client.includes("Vreme ubacivanja dostupno je posle očitavanja kartice"));
+  assert.ok(client.includes("Priprema tahografa za očitavanje kartice…"));
+  assert.ok(client.includes("pauza od 3 sekunde"));
 });
 
 test("history rows expose a 24-hour day detail without inventing missing card events", () => {
