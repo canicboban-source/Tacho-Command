@@ -26,18 +26,40 @@ type CardReadProgress = Readonly<{
 }>;
 type PersistentLiveTransport = {
   deviceLabel?: string;
-  device?: unknown;
+  device?: {
+    gatt?: {
+      connected?: boolean;
+      disconnect?: () => void;
+    };
+  };
   sendUds: (payload: readonly number[], timeoutMs?: number) => Promise<readonly number[] | null>;
   assertStationary: () => Promise<unknown>;
   isConnected?: () => boolean;
   close: () => Promise<void>;
 };
 type WakeLockSentinelLike = { release: () => Promise<void> };
+const LIVE_TEARDOWN_TIMEOUT_MS = 1500;
 const LIVE_TO_CARD_SETTLE_MS = 1000;
 
 const waitForLiveRelease = () => new Promise<void>((resolve) => {
   window.setTimeout(resolve, LIVE_TO_CARD_SETTLE_MS);
 });
+
+async function closeLiveForCard(transport: PersistentLiveTransport) {
+  let timeoutId: number | null = null;
+  const outcome = await Promise.race([
+    transport.close().then(() => "closed" as const, () => "failed" as const),
+    new Promise<"timeout">((resolve) => {
+      timeoutId = window.setTimeout(() => resolve("timeout"), LIVE_TEARDOWN_TIMEOUT_MS);
+    }),
+  ]);
+  if (timeoutId !== null) window.clearTimeout(timeoutId);
+  if (outcome === "failed") throw new Error("LIVE teardown failed");
+  if (outcome === "timeout") {
+    try { transport.device?.gatt?.disconnect?.(); } catch {}
+  }
+  await waitForLiveRelease();
+}
 
 async function requestCardWakeLock(): Promise<WakeLockSentinelLike | null> {
   const wakeLock = (navigator as Navigator & {
@@ -292,8 +314,7 @@ export default function AppV2Client() {
     setLiveConnected(false);
     setLastLiveSnapshot((previous) => previous ? { ...previous, connected: false } : previous);
     try {
-      await transport.close();
-      await waitForLiveRelease();
+      await closeLiveForCard(transport);
     } catch {
       setLiveSession(createAppV2LiveSession({
         phase: "error",
