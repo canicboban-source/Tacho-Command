@@ -11,7 +11,6 @@ import { formatTachoCommandVersionLine } from "../../lib/product-version.js";
 import { createAppV2LiveSession } from "../../lib/app-v2-live-session.js";
 import { beginAppV2CardRead, createAppV2CardSession } from "../../lib/app-v2-card-session.js";
 import { runBrowserAppV2GoldenCardRead } from "../../lib/app-v2-card-transport-controller-bridge.js";
-import { selectBrowserAppV2GoldenCardDevice } from "../../lib/app-v2-golden-card-browser-transport.js";
 import { openBrowserAppV2FieldTransport } from "../../lib/app-v2-field-transport.js";
 import { runAppV2LiveAttemptWithTelemetry } from "../../lib/app-v2-technical-telemetry-bridge.js";
 import { runAppV2FieldLiveRead } from "../../lib/app-v2-field-live-adapter.js";
@@ -39,7 +38,7 @@ type PersistentLiveTransport = {
 };
 type WakeLockSentinelLike = { release: () => Promise<void> };
 const LIVE_TEARDOWN_TIMEOUT_MS = 1500;
-const LIVE_TO_CARD_SETTLE_MS = 1000;
+const LIVE_TO_CARD_SETTLE_MS = 3000;
 
 const waitForLiveRelease = () => new Promise<void>((resolve) => {
   window.setTimeout(resolve, LIVE_TO_CARD_SETTLE_MS);
@@ -283,17 +282,14 @@ export default function AppV2Client() {
       return;
     }
 
-    // Ask Chrome immediately while this button click still owns transient user
-    // activation. The selected handle is not connected by the card transport
-    // until the LIVE session has been checked and closed below.
-    let selectedCardDevice: unknown;
-    try {
-      selectedCardDevice = await selectBrowserAppV2GoldenCardDevice();
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "NotFoundError") return;
+    // LIVE and card download use separate GATT sessions, but they target the
+    // same browser-authorized BluetoothDevice. Reuse that handle so the
+    // handoff does not open a second chooser or depend on transient activation.
+    const selectedCardDevice = transport.device;
+    if (!selectedCardDevice?.gatt) {
       setLiveSession(createAppV2LiveSession({
         phase: "error",
-        errorText: error instanceof Error ? error.message : "Izbor tahografa nije uspeo.",
+        errorText: "Tahograf iz LIVE veze nije dostupan za očitavanje kartice.",
       }));
       setLiveRunState("error");
       return;
@@ -307,8 +303,8 @@ export default function AppV2Client() {
     }
 
     // Diagnostics/LIVE and the proven Download protocol remain separate
-    // sessions. The chooser has supplied a fresh browser-selected handle; now
-    // end diagnostics cleanly before the locked card path connects.
+    // sessions. End diagnostics cleanly, allow the DTCO to release that
+    // session, then let the locked card path reconnect the retained device.
     stopSpeedGuard();
     liveTransportRef.current = null;
     setLiveConnected(false);

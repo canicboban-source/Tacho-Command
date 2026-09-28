@@ -23,23 +23,24 @@ test("App V2 prevents concurrent LIVE and CARD Bluetooth sessions", async () => 
   assert.match(source, /liveRunState === "running"\s*\? "connecting"/);
 });
 
-test("App V3 selects the card device from the click before closing LIVE", async () => {
+test("App V3 reuses the LIVE device for card reading after bounded teardown", async () => {
   const source = await readFile(clientUrl, "utf8");
   assert.match(source, /keepTransportOpen: true/);
-  const chooserAt = source.indexOf("await selectBrowserAppV2GoldenCardDevice");
-  const stationaryAt = source.indexOf("await transport.assertStationary()", chooserAt);
-  const closeAt = source.indexOf("await closeLiveForCard(transport)", chooserAt);
-  const cardReadAt = source.indexOf("await runBrowserAppV2GoldenCardRead", chooserAt);
-  assert.ok(chooserAt >= 0, "card chooser must be called from the button handler");
-  assert.ok(stationaryAt > chooserAt, "stationary guard must follow device selection");
+  const retainedDeviceAt = source.indexOf("const selectedCardDevice = transport.device");
+  const stationaryAt = source.indexOf("await transport.assertStationary()", retainedDeviceAt);
+  const closeAt = source.indexOf("await closeLiveForCard(transport)", retainedDeviceAt);
+  const cardReadAt = source.indexOf("await runBrowserAppV2GoldenCardRead", retainedDeviceAt);
+  assert.ok(retainedDeviceAt >= 0, "card read must retain the LIVE Bluetooth device");
+  assert.ok(stationaryAt > retainedDeviceAt, "stationary guard must follow retained-device validation");
   assert.ok(closeAt > stationaryAt, "LIVE must close after the stationary guard");
   assert.ok(cardReadAt > closeAt, "card transport must start only after bounded LIVE close");
+  assert.doesNotMatch(source, /selectBrowserAppV2GoldenCardDevice/);
   assert.match(source, /transport\.assertStationary\(\)/);
   assert.match(source, /LIVE_TEARDOWN_TIMEOUT_MS = 1500/);
   assert.match(source, /Promise\.race\(\[/);
   assert.match(source, /transport\.device\?\.gatt\?\.disconnect\?\.\(\)/);
   assert.match(source, /await closeLiveForCard\(transport\)/);
-  assert.match(source, /LIVE_TO_CARD_SETTLE_MS = 1000/);
+  assert.match(source, /LIVE_TO_CARD_SETTLE_MS = 3000/);
   assert.match(source, /device: selectedCardDevice/);
   assert.match(source, /disconnectOnFinish: true/);
   assert.match(source, /window\.setInterval/);
