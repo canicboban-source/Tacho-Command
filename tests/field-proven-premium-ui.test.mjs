@@ -78,7 +78,7 @@ test("reconstruction cannot touch the proven communication motor", () => {
   }
 });
 
-test("visual source uses clearer panel lines and state-driven continuous-driving colors", () => {
+test("visual source uses clearer panel lines and confirmed pause colors", () => {
   assert.ok(css.includes("--tc-panel-line: 1.5px"));
   assert.ok(css.includes("border: var(--tc-panel-line)"));
   assert.ok(css.includes(".progressFill"));
@@ -90,16 +90,17 @@ test("visual source uses clearer panel lines and state-driven continuous-driving
   ]) {
     assert.ok(css.includes(visualClass), visualClass + " must be present");
   }
-  assert.ok(client.includes("state.continuousBand"));
+  assert.ok(client.includes("state.cumulativeBreakMinutes"));
+  assert.ok(client.includes("breaks.drivingComplete"));
   assert.ok(client.includes("styles.progressWarning"));
-  assert.ok(client.includes("styles.progressLimit"));
+  assert.ok(client.includes("styles.progressSafe"));
   assert.ok(client.includes("PAUZE"));
-  assert.ok(client.includes("Vožnja · pauza do 4 h 30 min"));
-  assert.ok(client.includes("Radno vreme · pauza do 6 h"));
-  assert.ok(client.includes("Vreme ubacivanja dostupno je posle očitavanja kartice"));
+  assert.ok(client.includes("Vožnja · 45 min / 15 + 30"));
+  assert.ok(client.includes("Radno vreme · pauza nakon najviše 6 h"));
+  assert.ok(client.includes("Puna pauza ostvarena"));
+  assert.ok(client.includes("Tahograf je potvrdio pauzu"));
   assert.ok(client.includes("Priprema tahografa za očitavanje kartice…"));
   assert.ok(client.includes("pauza od 3 sekunde"));
-  assert.ok(client.includes("cardUtcMinuteEpoch(day.dateIso, event.minute)"));
 });
 
 test("history rows expose a 24-hour day detail without inventing missing card events", () => {

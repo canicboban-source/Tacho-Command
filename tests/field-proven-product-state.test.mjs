@@ -242,9 +242,9 @@ test("adapter source is a pure state boundary and cannot issue tachograph or tel
   }
 });
 
-test("premium UI consumes the shared state contract and no longer hard-codes 4:30", () => {
+test("premium UI consumes the shared confirmed break value", () => {
   assert.match(uiSource, /import type \{[^}]*FieldProvenProductState[^}]*\}/);
-  assert.match(uiSource, /continuousThresholdLabel/);
+  assert.match(uiSource, /cumulativeBreakMinutes/);
   assert.equal(uiSource.includes("<span>4:30</span>"), false);
 });
 

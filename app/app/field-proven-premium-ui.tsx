@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import styles from "./field-proven-premium-ui.module.css";
 import type { FieldProvenActivity, FieldProvenHistoryDay, FieldProvenHistorySegment, FieldProvenProductState, FieldProvenTimelineKind } from "../../lib/field-proven-product-state.js";
-import { cardLocalDateIso, cardUtcMinuteEpoch, formatCardLocalTime } from "../../lib/card-local-time.js";
 
 export type ProductTab = "live" | "periods" | "history" | "attention" | "card";
 
@@ -48,6 +47,45 @@ function formatMinutes(value: number | null): string {
 function clampPercent(value: number | null): number {
   if (value === null || !Number.isFinite(value)) return 0;
   return Math.min(100, Math.max(0, value));
+}
+
+function pauseStatus(minutes: number | null) {
+  if (minutes === null || !Number.isFinite(minutes) || minutes < 0) {
+    return {
+      drivingLabel: "Nije potvrđeno",
+      drivingDetail: "Poveži tahograf za potvrđenu pauzu",
+      drivingPercent: 0,
+      drivingComplete: false,
+      workLabel: "Nije potvrđeno",
+      workDetail: "Poveži tahograf za potvrđenu pauzu",
+      workPercent: 0,
+      workComplete: false,
+    };
+  }
+
+  const rounded = Math.round(minutes);
+  const drivingComplete = rounded >= 45;
+  const workComplete = rounded >= 30;
+  return {
+    drivingLabel: drivingComplete ? "Puna pauza ostvarena" : "Pauza u toku · " + formatMinutes(rounded),
+    drivingDetail: drivingComplete
+      ? "Novi ciklus vožnje počinje kada tahograf potvrdi VOŽNJU"
+      : rounded >= 15
+        ? "15 min potvrđeno · nastavi do 45 min ili kasnije najmanje 30 min"
+        : "Do pune pauze potrebno je 45 min",
+    drivingPercent: clampPercent((rounded / 45) * 100),
+    drivingComplete,
+    workLabel: workComplete ? "Pauza ostvarena" : "Pauza u toku · " + formatMinutes(rounded),
+    workDetail: rounded >= 45
+      ? "Ispunjeno i za dnevni rad duži od 9 sati"
+      : workComplete
+        ? "Minimum 30 min ispunjen · za više od 9 sati potrebno je 45 min"
+        : rounded >= 15
+          ? "Prvi deo od najmanje 15 min potvrđen"
+          : "Za 6–9 sati rada potrebno je najmanje 30 min",
+    workPercent: clampPercent((rounded / 45) * 100),
+    workComplete,
+  };
 }
 
 const TIMELINE_SR: Readonly<Record<FieldProvenTimelineKind, string>> = Object.freeze({
@@ -125,38 +163,7 @@ function IdentityHeader({ state, controls }: Readonly<{ state: FieldProvenProduc
 }
 
 function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductState; controls: ProductControls }>) {
-  const [clockNowMs, setClockNowMs] = useState<number | null>(null);
-  useEffect(() => {
-    const initialTick = window.setTimeout(() => setClockNowMs(Date.now()), 0);
-    const timer = window.setInterval(() => setClockNowMs(Date.now()), 30_000);
-    return () => {
-      window.clearTimeout(initialTick);
-      window.clearInterval(timer);
-    };
-  }, []);
-  const now = clockNowMs === null ? null : new Date(clockNowMs);
-  const todayIso = now ? cardLocalDateIso(now.getTime()) : null;
-  const latestCardEvent = todayIso
-    ? state.historyDays.flatMap((day) => day.events
-      .map((event) => ({ ...event, epochMs: cardUtcMinuteEpoch(day.dateIso, event.minute) }))
-      .filter((event) => event.epochMs !== null && cardLocalDateIso(event.epochMs) === todayIso && event.epochMs <= (clockNowMs ?? 0)))
-      .sort((left, right) => (left.epochMs ?? 0) - (right.epochMs ?? 0))
-      .at(-1) ?? null
-    : null;
-  const insertedAtEpochMs = latestCardEvent?.kind === "card-inserted" ? latestCardEvent.epochMs : null;
-  const elapsedSinceInsert = insertedAtEpochMs !== null && clockNowMs !== null
-    ? Math.max(0, Math.floor((clockNowMs - insertedAtEpochMs) / 60_000))
-    : null;
-  const workBreakProgress = elapsedSinceInsert === null ? null : Math.min(100, (elapsedSinceInsert / 360) * 100);
-  const workBreakRemaining = elapsedSinceInsert === null ? null : Math.max(0, 360 - elapsedSinceInsert);
-  const insertedAtLabel = insertedAtEpochMs !== null ? formatCardLocalTime(insertedAtEpochMs) : null;
-  const progress = clampPercent(state.continuousProgressPercent);
-  const progressBandClass = {
-    neutral: styles.progressNeutral,
-    safe: styles.progressSafe,
-    warning: styles.progressWarning,
-    limit: styles.progressLimit,
-  }[state.continuousBand];
+  const breaks = pauseStatus(state.cumulativeBreakMinutes);
   const cardProgress = controls.cardReadProgress;
   const cardVisualProgress = cardProgress?.complete
     ? 100
@@ -206,33 +213,33 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
         <div className={styles.pauseHeading}>PAUZE</div>
         <div className={styles.pauseBlock}>
           <div className={styles.metricRow}>
-            <span>Vožnja · pauza do 4 h 30 min</span>
-            <strong>{formatMinutes(state.continuousDrivingMinutes)}</strong>
+            <span>Vožnja · 45 min / 15 + 30</span>
+            <strong className={breaks.drivingComplete ? styles.pauseComplete : undefined}>{breaks.drivingLabel}</strong>
           </div>
-          <div className={styles.progressTrack} aria-label="Vožnja do obavezne pauze">
-            <span className={styles.progressFill + " " + progressBandClass} style={{ width: String(progress) + "%" }} />
+          <div className={styles.progressTrack} aria-label="Potvrđena pauza od vožnje">
+            <span className={styles.progressFill + " " + (breaks.drivingComplete ? styles.progressSafe : styles.progressWarning)} style={{ width: String(breaks.drivingPercent) + "%" }} />
           </div>
           <div className={styles.progressScale}>
-            <span>0:00</span>
-            <span>{state.continuousRemainingLabel ? "Preostalo " + state.continuousRemainingLabel : "Nije potvrđeno"}</span>
-            <span>{state.continuousThresholdLabel ?? "—"}</span>
+            <span>0 min</span>
+            <span>{breaks.drivingDetail}</span>
+            <span>45 min</span>
           </div>
         </div>
         <div className={styles.pauseBlock}>
           <div className={styles.metricRow}>
-            <span>Radno vreme · pauza do 6 h</span>
-            <strong>{workBreakRemaining === null ? "Nije potvrđeno" : workBreakRemaining > 0 ? "Preostalo " + formatMinutes(workBreakRemaining) : "6 h dostignuto"}</strong>
+            <span>Radno vreme · pauza nakon najviše 6 h</span>
+            <strong className={breaks.workComplete ? styles.pauseComplete : undefined}>{breaks.workLabel}</strong>
           </div>
-          <div className={styles.progressTrack} aria-label="Radno vreme do pauze">
-            <span className={styles.progressFill + " " + (workBreakProgress === null ? styles.progressNeutral : styles.progressWork)} style={{ width: String(workBreakProgress ?? 0) + "%" }} />
+          <div className={styles.progressTrack} aria-label="Potvrđena pauza u radnom vremenu">
+            <span className={styles.progressFill + " " + (breaks.workComplete ? styles.progressSafe : styles.progressWarning)} style={{ width: String(breaks.workPercent) + "%" }} />
           </div>
           <div className={styles.progressScale}>
-            <span>{insertedAtLabel ? "Kartica ubačena " + insertedAtLabel : "Početak nije potvrđen"}</span>
-            <span>{workBreakRemaining === null ? "Vreme ubacivanja dostupno je posle očitavanja kartice" : "Od ubacivanja kartice"}</span>
-            <span>{state.workBreakThresholdLabel}</span>
+            <span>0 min</span>
+            <span>{breaks.workDetail}</span>
+            <span>30 / 45 min</span>
           </div>
           <div className={styles.confirmedBreak}>
-            Očitana kumulativna pauza: <strong>{formatMinutes(state.cumulativeBreakMinutes)}</strong>
+            Tahograf je potvrdio pauzu: <strong>{formatMinutes(state.cumulativeBreakMinutes)}</strong>
           </div>
         </div>
       </section>

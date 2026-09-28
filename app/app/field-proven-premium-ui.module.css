@@ -120,6 +120,7 @@
 .pauseBlock + .pauseBlock { margin-top: 20px; border-top: 1px solid #244756; }
 .pauseBlock .metricRow > span { font-size: 14px; }
 .pauseBlock .metricRow > strong { font-size: 17px; text-align: right; }
+.pauseBlock .metricRow > strong.pauseComplete { color: var(--tc-green); }
 .confirmedBreak { margin-top: 12px; color: #8aa0ab; font-size: 12px; }
 .confirmedBreak strong { color: #dce8ed; }
 .metricRow { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; }
@@ -136,7 +137,6 @@
 .progressFill { transition: width 220ms ease, background 180ms ease, box-shadow 180ms ease; }
 .progressNeutral { background: #4a616d; }
 .progressSafe { background: var(--tc-green); }
-.progressWork { background: #35c7e2; }
 .progressWarning {
   background: var(--tc-yellow);
 }
