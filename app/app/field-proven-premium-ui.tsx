@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./field-proven-premium-ui.module.css";
 import type { FieldProvenActivity, FieldProvenHistoryDay, FieldProvenHistorySegment, FieldProvenProductState, FieldProvenTimelineKind } from "../../lib/field-proven-product-state.js";
+import { cardLocalDateIso, cardUtcMinuteEpoch, formatCardLocalTime } from "../../lib/card-local-time.js";
 
 export type ProductTab = "live" | "periods" | "history" | "attention" | "card";
 
@@ -134,23 +135,21 @@ function LiveScreen({ state, controls }: Readonly<{ state: FieldProvenProductSta
     };
   }, []);
   const now = clockNowMs === null ? null : new Date(clockNowMs);
-  const todayIso = now
-    ? String(now.getFullYear()) + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0")
+  const todayIso = now ? cardLocalDateIso(now.getTime()) : null;
+  const latestCardEvent = todayIso
+    ? state.historyDays.flatMap((day) => day.events
+      .map((event) => ({ ...event, epochMs: cardUtcMinuteEpoch(day.dateIso, event.minute) }))
+      .filter((event) => event.epochMs !== null && cardLocalDateIso(event.epochMs) === todayIso && event.epochMs <= (clockNowMs ?? 0)))
+      .sort((left, right) => (left.epochMs ?? 0) - (right.epochMs ?? 0))
+      .at(-1) ?? null
     : null;
-  const todayHistory = state.historyDays.find((day) => day.dateIso === todayIso);
-  const latestCardEvent = todayHistory?.events.at(-1) ?? null;
-  const cardInsertedMinute = latestCardEvent?.kind === "card-inserted" ? latestCardEvent.minute : null;
-  const insertedAt = now && cardInsertedMinute !== null
-    ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(cardInsertedMinute / 60), cardInsertedMinute % 60)
-    : null;
-  const elapsedSinceInsert = insertedAt && now
-    ? Math.max(0, Math.floor((now.getTime() - insertedAt.getTime()) / 60_000))
+  const insertedAtEpochMs = latestCardEvent?.kind === "card-inserted" ? latestCardEvent.epochMs : null;
+  const elapsedSinceInsert = insertedAtEpochMs !== null && clockNowMs !== null
+    ? Math.max(0, Math.floor((clockNowMs - insertedAtEpochMs) / 60_000))
     : null;
   const workBreakProgress = elapsedSinceInsert === null ? null : Math.min(100, (elapsedSinceInsert / 360) * 100);
   const workBreakRemaining = elapsedSinceInsert === null ? null : Math.max(0, 360 - elapsedSinceInsert);
-  const insertedAtLabel = insertedAt
-    ? insertedAt.toLocaleTimeString("sr-RS", { hour: "2-digit", minute: "2-digit" })
-    : null;
+  const insertedAtLabel = insertedAtEpochMs !== null ? formatCardLocalTime(insertedAtEpochMs) : null;
   const progress = clampPercent(state.continuousProgressPercent);
   const progressBandClass = {
     neutral: styles.progressNeutral,

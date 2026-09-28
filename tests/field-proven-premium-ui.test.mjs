@@ -99,6 +99,7 @@ test("visual source uses clearer panel lines and state-driven continuous-driving
   assert.ok(client.includes("Vreme ubacivanja dostupno je posle očitavanja kartice"));
   assert.ok(client.includes("Priprema tahografa za očitavanje kartice…"));
   assert.ok(client.includes("pauza od 3 sekunde"));
+  assert.ok(client.includes("cardUtcMinuteEpoch(day.dateIso, event.minute)"));
 });
 
 test("history rows expose a 24-hour day detail without inventing missing card events", () => {

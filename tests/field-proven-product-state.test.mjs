@@ -6,6 +6,7 @@ import {
   createFieldProvenLiveSnapshot,
   createFieldProvenProductState,
 } from "../lib/field-proven-product-state.js";
+import { cardLocalDateIso, cardUtcMinuteEpoch, formatCardLocalTime } from "../lib/card-local-time.js";
 
 const uiSource = await readFile(
   new URL("../app/app/field-proven-premium-ui.tsx", import.meta.url),
@@ -50,6 +51,18 @@ test("adapter maps proven LIVE snapshot values without inventing data", () => {
   assert.equal(state.workBreakConfirmed, false);
   assert.equal(state.telemetrySentCount, 6);
   assert.equal(state.attemptCode, "TC-7F2K8M");
+});
+
+test("card UTC activity times render in the Vienna time zone with DST", () => {
+  const summerInsert = cardUtcMinuteEpoch("2026-09-28", 3 * 60 + 34);
+  assert.equal(formatCardLocalTime(summerInsert), "05:34");
+  assert.equal(cardLocalDateIso(summerInsert), "2026-09-28");
+  assert.equal(Math.floor((Date.UTC(2026, 8, 28, 8, 55) - summerInsert) / 60_000), 321);
+
+  const winterInsert = cardUtcMinuteEpoch("2026-12-10", 3 * 60 + 34);
+  assert.equal(formatCardLocalTime(winterInsert), "04:34");
+  assert.equal(cardLocalDateIso(cardUtcMinuteEpoch("2026-09-28", 23 * 60)), "2026-09-29");
+  assert.equal(cardUtcMinuteEpoch("2026-02-30", 60), null);
 });
 
 test("adapter stays neutral when no rule/profile threshold is supplied", () => {
