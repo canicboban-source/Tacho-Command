@@ -11,6 +11,7 @@ import { formatTachoCommandVersionLine } from "../../lib/product-version.js";
 import { createAppV2LiveSession } from "../../lib/app-v2-live-session.js";
 import { beginAppV2CardRead, createAppV2CardSession } from "../../lib/app-v2-card-session.js";
 import { runBrowserAppV2GoldenCardRead } from "../../lib/app-v2-card-transport-controller-bridge.js";
+import { selectBrowserAppV2GoldenCardDevice } from "../../lib/app-v2-golden-card-browser-transport.js";
 import { openBrowserAppV2FieldTransport } from "../../lib/app-v2-field-transport.js";
 import { runAppV2LiveAttemptWithTelemetry } from "../../lib/app-v2-technical-telemetry-bridge.js";
 import { runAppV2FieldLiveRead } from "../../lib/app-v2-field-live-adapter.js";
@@ -32,6 +33,11 @@ type PersistentLiveTransport = {
   close: () => Promise<void>;
 };
 type WakeLockSentinelLike = { release: () => Promise<void> };
+const LIVE_TO_CARD_SETTLE_MS = 1000;
+
+const waitForLiveRelease = () => new Promise<void>((resolve) => {
+  window.setTimeout(resolve, LIVE_TO_CARD_SETTLE_MS);
+});
 
 async function requestCardWakeLock(): Promise<WakeLockSentinelLike | null> {
   const wakeLock = (navigator as Navigator & {
@@ -255,6 +261,22 @@ export default function AppV2Client() {
       return;
     }
 
+    // Ask Chrome immediately while this button click still owns transient user
+    // activation. The selected handle is not connected by the card transport
+    // until the LIVE session has been checked and closed below.
+    let selectedCardDevice: unknown;
+    try {
+      selectedCardDevice = await selectBrowserAppV2GoldenCardDevice();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "NotFoundError") return;
+      setLiveSession(createAppV2LiveSession({
+        phase: "error",
+        errorText: error instanceof Error ? error.message : "Izbor tahografa nije uspeo.",
+      }));
+      setLiveRunState("error");
+      return;
+    }
+
     try {
       await transport.assertStationary();
     } catch (error) {
@@ -262,16 +284,16 @@ export default function AppV2Client() {
       return;
     }
 
-    // Diagnostics/LIVE and the proven Download protocol are separate sessions.
-    // End diagnostics cleanly, then let the locked golden 0.32c card path open
-    // its own dedicated browser-selected Download session. Reusing the LIVE
-    // BluetoothDevice was rejected in the physical field test before packet 1.
+    // Diagnostics/LIVE and the proven Download protocol remain separate
+    // sessions. The chooser has supplied a fresh browser-selected handle; now
+    // end diagnostics cleanly before the locked card path connects.
     stopSpeedGuard();
     liveTransportRef.current = null;
     setLiveConnected(false);
     setLastLiveSnapshot((previous) => previous ? { ...previous, connected: false } : previous);
     try {
       await transport.close();
+      await waitForLiveRelease();
     } catch {
       setLiveSession(createAppV2LiveSession({
         phase: "error",
@@ -292,6 +314,10 @@ export default function AppV2Client() {
       session: readingSession,
       storage: window.localStorage,
       capturedAtIso: new Date().toISOString(),
+      transportOptions: {
+        device: selectedCardDevice,
+        disconnectOnFinish: true,
+      },
       onProgress: (progress: CardReadProgress) => setCardReadProgress(progress),
       onTelemetryAttempt: (attemptCode: string) => setCardAttemptCode(attemptCode),
     }).finally(async () => {

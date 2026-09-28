@@ -23,13 +23,24 @@ test("App V2 prevents concurrent LIVE and CARD Bluetooth sessions", async () => 
   assert.match(source, /liveRunState === "running"\s*\? "connecting"/);
 });
 
-test("App V3 closes LIVE before the dedicated golden card session", async () => {
+test("App V3 selects the card device from the click before closing LIVE", async () => {
   const source = await readFile(clientUrl, "utf8");
   assert.match(source, /keepTransportOpen: true/);
+  const chooserAt = source.indexOf("await selectBrowserAppV2GoldenCardDevice");
+  const stationaryAt = source.indexOf("await transport.assertStationary()", chooserAt);
+  const closeAt = source.indexOf("await transport.close()", chooserAt);
+  const settleAt = source.indexOf("await waitForLiveRelease()", chooserAt);
+  const cardReadAt = source.indexOf("await runBrowserAppV2GoldenCardRead", chooserAt);
+  assert.ok(chooserAt >= 0, "card chooser must be called from the button handler");
+  assert.ok(stationaryAt > chooserAt, "stationary guard must follow device selection");
+  assert.ok(closeAt > stationaryAt, "LIVE must close after the stationary guard");
+  assert.ok(settleAt > closeAt, "tachograph release guard must follow LIVE close");
+  assert.ok(cardReadAt > settleAt, "card transport must start only after release guard");
   assert.match(source, /transport\.assertStationary\(\)/);
   assert.match(source, /await transport\.close\(\)/);
-  assert.doesNotMatch(source, /const selectedDevice = transport\.device/);
-  assert.doesNotMatch(source, /device: selectedDevice/);
+  assert.match(source, /LIVE_TO_CARD_SETTLE_MS = 1000/);
+  assert.match(source, /device: selectedCardDevice/);
+  assert.match(source, /disconnectOnFinish: true/);
   assert.match(source, /window\.setInterval/);
   assert.match(source, /setLiveConnected\(true\)/);
   assert.match(source, /connected: liveConnected/);
