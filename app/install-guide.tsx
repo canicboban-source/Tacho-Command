@@ -99,9 +99,14 @@ export default function InstallGuide({ locale: explicitLocale }: InstallGuidePro
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
+    const installWindow = window as Window & { __tachoInstallPrompt?: BeforeInstallPromptEvent };
     const onBeforeInstall = (event: Event) => {
       event.preventDefault();
+      installWindow.__tachoInstallPrompt = event as BeforeInstallPromptEvent;
       setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const onInstallReady = () => {
+      setInstallPrompt(installWindow.__tachoInstallPrompt ?? null);
     };
     const onInstalled = () => {
       setInstalled(true);
@@ -110,6 +115,8 @@ export default function InstallGuide({ locale: explicitLocale }: InstallGuidePro
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("tacho-install-ready", onInstallReady);
+    onInstallReady();
     window.addEventListener("appinstalled", onInstalled);
 
     const standalone = window.matchMedia("(display-mode: standalone)").matches;
@@ -117,6 +124,7 @@ export default function InstallGuide({ locale: explicitLocale }: InstallGuidePro
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("tacho-install-ready", onInstallReady);
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
@@ -142,9 +150,12 @@ export default function InstallGuide({ locale: explicitLocale }: InstallGuidePro
     if (!installPrompt) return;
     const prompt = installPrompt;
     setInstallPrompt(null);
+    const installWindow = window as Window & { __tachoInstallPrompt?: BeforeInstallPromptEvent };
+    installWindow.__tachoInstallPrompt = undefined;
     try {
       await prompt.prompt();
-      await prompt.userChoice;
+      const choice = await prompt.userChoice;
+      if (choice.outcome === "dismissed") setOpen(true);
     } catch { setOpen(true); }
   };
 
