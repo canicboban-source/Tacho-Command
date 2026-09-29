@@ -160,7 +160,7 @@ export async function GET(request: Request) {
         cardAttempts: summarizeCardAttempts(recentTechnical, now).slice(0, 50),
       },
       privacy: {
-        aggregateOnly: true,
+        aggregateOnly: false,
         productRetentionDays: 90,
         technicalRetentionDays: 60,
         technicalAttemptDetails: true,
