@@ -163,7 +163,7 @@ export default function AdminDashboard() {
         <section className={styles.loginCard}>
           <div className={styles.brand}><span>TC</span><div><small>PRIVATE CONTROL PLANE</small><strong>TachoCommand Admin</strong></div></div>
           <h1>Super-user cockpit</h1>
-          <p>Samo agregatni podaci o proizvodu. Bez imena vozača, kartica, registracija, lokacije ili raw tahografskih podataka.</p>
+          <p>Agregatni podaci i anonimni tehnički pokušaji. Bez imena vozača, brojeva kartica, registracija, lokacije ili raw tahografskih podataka.</p>
           <form onSubmit={login}>
             <label htmlFor="admin-key">Admin access key</label>
             <input id="admin-key" type="password" value={key} onChange={(event) => setKey(event.target.value)} autoComplete="current-password" required minLength={24} />
