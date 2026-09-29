@@ -41,6 +41,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         {/* Keep installation local to this origin; metadataBase is for SEO. */}
         <link rel="manifest" href="/manifest.webmanifest" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener("beforeinstallprompt", function(event) {
+              event.preventDefault();
+              window.__tachoInstallPrompt = event;
+              window.dispatchEvent(new Event("tacho-install-ready"));
+            });`,
+          }}
+        />
       </head>
       <body>
         <ServiceWorkerRegister />
