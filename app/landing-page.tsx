@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
 import InstallGuide from "./install-guide";
 import { formatTachoCommandVersionLine } from "../lib/product-version.js";
-import { emailAuthCopy } from "../lib/email-auth-copy.js";
+import { openBetaCopy } from "../lib/open-beta-copy.js";
 import { extraLandingCopy } from "../lib/landing-extra-copy.js";
 export type Locale = "sr" | "en" | "de" | "ru" | "bg" | "ro" | "hu";
 const copy = {
@@ -59,7 +59,7 @@ const copy = {
       "Kartična istorija se obrađuje i čuva lokalno. Ograničena tehnička telemetrija služi dijagnostici; ne sadrži ime vozača, raw karticu ili lokaciju. Detalji su u politici privatnosti.",
     beta: "Beta koju proveravamo zajedno",
     betaText:
-      "Besplatna beta: tri dana zajedničkog testiranja. Bez platne kartice i automatske naplate. Vremena proveri na zvaničnom tahografu.",
+      "Pristup za sve, bez prijave, potvrde mejla, kupovine i vremenskog ograničenja tokom otvorene bete. Vremena proveri na zvaničnom tahografu.",
     footer:
       "TachoCommand je pomoćni pregled. Tahograf, kartica i važeći propisi ostaju merodavni.",
     legal: ["Privatnost", "Uslovi", "Impressum"],
@@ -113,7 +113,7 @@ const copy = {
       "Card history is processed and stored locally. Limited technical telemetry supports diagnostics; it excludes driver names, raw card data and location. See the privacy policy for details.",
     beta: "A beta we validate together",
     betaText:
-      "Free beta: three days of testing together. No payment card or automatic charge. Cross-check times on the official tachograph.",
+      "Access for everyone, without sign-in, email confirmation, purchase or a time limit during the open beta. Cross-check times on the official tachograph.",
     footer:
       "TachoCommand is an auxiliary overview. The tachograph, card and applicable rules remain authoritative.",
     legal: ["Privacy", "Terms", "Imprint"],
@@ -167,7 +167,7 @@ const copy = {
       "Kartenverlauf wird lokal verarbeitet und gespeichert. Begrenzte technische Telemetrie dient der Diagnose; Fahrername, rohe Kartendaten und Standort sind ausgeschlossen. Einzelheiten in der Datenschutzerklärung.",
     beta: "Eine Beta, die wir gemeinsam prüfen",
     betaText:
-      "Kostenlose Beta: drei Tage gemeinsam testen. Keine Zahlungskarte und keine automatische Abbuchung. Zeiten am offiziellen Tachograph prüfen.",
+      "Zugang für alle, ohne Anmeldung, E-Mail-Bestätigung, Kauf oder Zeitlimit während der offenen Beta. Zeiten am offiziellen Tachographen prüfen.",
     footer:
       "TachoCommand ist eine ergänzende Übersicht. Tachograph, Karte und geltende Vorschriften bleiben maßgeblich.",
     legal: ["Datenschutz", "Bedingungen", "Impressum"],
@@ -350,8 +350,8 @@ export default function LandingPage({
       </section>
       <section className="tcx-section tcx-final">
         <span className="tcx-eyebrow">{t.beta}</span><h2>{visual.ready}</h2>
-        <p><strong>{emailAuthCopy[locale].title}</strong></p>
-        <p>{emailAuthCopy[locale].intro}</p>
+        <p><strong>{openBetaCopy[locale].title}</strong></p>
+        <p>{openBetaCopy[locale].intro}</p>
         <Link
           href="/app"
           onClick={openApp}
