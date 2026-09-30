@@ -1,7 +1,6 @@
 "use client";
 import { abortableBleDelay } from "../../lib/ble-operation.js";
-import EmailAccessPanel from "../email-access-panel";
-import { useEmailTrial } from "../../lib/use-email-trial";
+import { openBetaCopy } from "../../lib/open-beta-copy.js";
 import { APP_LANGUAGES, type AppLocale } from "../../lib/product-app-copy.js";
 
 import type { CardTransportDiagnostic } from "../../lib/card-transport-diagnostic";
@@ -307,10 +306,8 @@ export default function AppV2Client() {
 
   const restoredLabel = formatRestoreTime(capturedAtIso, locale);
 
-  const trial = useEmailTrial(() => { generationRef.current += 1; liveOpenAbortRef.current?.abort(); readAbortRef.current?.abort(); void closePersistentLive(); });
 
   const runLiveRead = async () => {
-    if (!trial.permitsNow()) { void trial.refresh(); return; }
     if (liveOpeningRef.current || cardSession.busy || cardReadBusyRef.current) return;
     liveOpeningRef.current = true;
     const generation = ++generationRef.current;
@@ -325,7 +322,7 @@ export default function AppV2Client() {
         openTransport: () => openBrowserAppV2FieldTransport({ signal: controller.signal }),
         keepTransportOpen: true,
       });
-      if (!mountedRef.current || generationRef.current !== generation || controller.signal.aborted || !trial.permitsNow()) {
+      if (!mountedRef.current || generationRef.current !== generation || controller.signal.aborted) {
         try { await (result.transport as PersistentLiveTransport | undefined)?.close(); } catch {}
         return;
       }
@@ -360,7 +357,6 @@ export default function AppV2Client() {
   };
 
   const runCardRead = async () => {
-    if (!trial.permitsNow()) { void trial.refresh(); return; }
     if (cardSession.busy || cardReadBusyRef.current || liveOpeningRef.current) return;
     const transport = liveTransportRef.current;
     if (!transport || transport.isConnected?.() === false) {
@@ -401,7 +397,7 @@ export default function AppV2Client() {
         }));
         throw error;
       }
-      if (!current() || !trial.permitsNow()) throw new Error("BLE_CANCELLED");
+      if (!current()) throw new Error("BLE_CANCELLED");
       readingSession = beginAppV2CardRead(cardSession);
       setCardSession(readingSession); setCardHandoffPreparing(false);
       setCardReadProgress(Object.freeze({ submessages: 0, byteLength: 0, complete: false }));
@@ -455,7 +451,7 @@ export default function AppV2Client() {
 
   return (
     <div className={styles.stage}>
-      <EmailAccessPanel locale={locale} access={trial.access} onRefresh={() => void trial.refresh()} />
+      <aside lang={locale} aria-label={openBetaCopy[locale].title}><strong>{openBetaCopy[locale].title}</strong><p>{openBetaCopy[locale].intro}</p></aside>
       <section className={styles.instrumentFrame} aria-label="TachoCommand premium instrument">
         <FieldProvenPremiumUi
           state={state}
@@ -463,7 +459,7 @@ export default function AppV2Client() {
             canonicalCard: savedCardVisible ? cardState : null,
             persisted: cardSession.persisted,
             phase: productPhase,
-            accessAllowed: (trial.access.status === "active" || trial.access.status === "owner") && trial.permitsNow(),
+            accessAllowed: true,
             restoreState,
             restoredLabel,
             errorText: visibleErrorText,
