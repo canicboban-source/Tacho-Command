@@ -65,8 +65,9 @@
 .daySequenceRow:last-child { border:0; }
 .daySequenceRow time { color:#a3f3ce; font-variant-numeric:tabular-nums; }
 .daySequenceRow small { display:block; color:#94adbb; }
-.content .breakNotice { width:100%; border-color:#715c2e; background:#2a2519; color:#f8d989; text-align:left; margin-bottom:16px; }
-.breakFinding { margin-top:16px; padding:18px; border-left:3px solid #f8d989; border-radius:8px; background:#252319; }
+.content .breakNotice { width:100%; border-color:#ff8b92; background:#30171f; color:#ffb4ba; text-align:left; margin-bottom:16px; }
+.breakFinding { margin-top:16px; padding:18px; border-left:3px solid #ff8b92; border-radius:8px; background:#30171f; }
+.content .breakFinding p,.breakFinding h2 { color:#ffb4ba; }
 .breakFinding h2 { font-size:16px; margin:0 0 12px; }
 .bottomNav { position:fixed; z-index:30; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:8px max(8px,calc((100vw - 840px)/2)) max(8px,env(safe-area-inset-bottom)); background:#0c151ef5; border-top:1px solid #2b3d49; backdrop-filter:blur(16px); }
 .bottomNav button { min-width:0; min-height:58px; padding:6px 2px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; color:#90a6b5; border:0; border-radius:12px; background:transparent; cursor:pointer; }

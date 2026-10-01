@@ -331,6 +331,7 @@ export default function FieldProvenPremiumUi({
                 <button onClick={() => setSelected(null)}>← {t.back}</button>
                 <h2>{day.dateIso}</h2>
                 <p>{t.dayNote}</p>
+                {!day.coverageComplete && <p>{warningCopy.gap}</p>}
                 {day.timingComplete && (
                   <section className={styles.dayTimelinePanel}>
                     <div className={styles.dayTimelineHeader}>
