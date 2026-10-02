@@ -1,6 +1,7 @@
 "use client";
 import type { CardTransportDiagnostic } from "../../lib/card-transport-diagnostic";
 import Link from "next/link";
+import DayTimeline from "./day-timeline";
 import { diagnosticCopy } from "../../lib/product-diagnostic-copy.js";
 import { appCopy as copy, APP_LANGUAGES, type AppLocale } from "../../lib/product-app-copy.js";
 import { reviewUtcCardBreaks, exportUtcCardCsv } from "../../lib/card-utc-review.js";
@@ -333,40 +334,7 @@ export default function FieldProvenPremiumUi({
                 <p>{t.dayNote}</p>
                 {!day.coverageComplete && <p>{warningCopy.gap}</p>}
                 {day.timingComplete && (
-                  <section className={styles.dayTimelinePanel}>
-                    <div className={styles.dayTimelineHeader}>
-                      <span>00:00</span>
-                      <span>12:00</span>
-                      <span>24:00</span>
-                    </div>
-                    <div
-                      className={styles.dayTimelineTrack}
-                      aria-label={t.history}
-                    >
-                      {day.segments.map((seg, i) =>
-                        seg.startMinute !== null && seg.endMinute !== null ? (
-                          <span
-                            key={i}
-                            className={styles[seg.kind]}
-                            style={{
-                              left: (seg.startMinute / 1440) * 100 + "%",
-                              width:
-                                ((seg.endMinute - seg.startMinute) / 1440) *
-                                  100 +
-                                "%",
-                            }}
-                            title={
-                              kinds[seg.kind] +
-                              " " +
-                              clock(seg.startMinute) +
-                              "–" +
-                              clock(seg.endMinute)
-                            }
-                          />
-                        ) : null,
-                      )}
-                    </div>
-                  </section>
+                  <DayTimeline key={day.dateIso} day={day} kinds={kinds} locale={c.locale} />
                 )}
                 <div className={styles.daySummaryGrid}>
                   {Object.entries(day.activityTotals).map(([kind, value]) => (
