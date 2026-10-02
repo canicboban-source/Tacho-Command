@@ -4,6 +4,7 @@ import { createAppV2CardTelemetry } from "../lib/app-v2-card-telemetry.js";
 import { sanitizeTechnicalTelemetryBatch } from "../lib/technical-telemetry.js";
 import { summarizeTechnicalAttempts } from "../lib/admin-card-attempts.js";
 import { runBrowserAppV2GoldenCardRead } from "../lib/app-v2-card-transport-controller-bridge.js";
+import { diagnosticForAttempt } from "../lib/diagnostic-codes.js";
 
 const cryptoImpl = {
   randomUUID: () => "123e4567-e89b-42d3-a456-426614174000",
@@ -12,6 +13,12 @@ const cryptoImpl = {
     return bytes;
   },
 };
+
+test('historic stationary failures retain code 034 without inferred speed', () => {
+ const [row]=sanitizeTechnicalTelemetryBatch([{sessionId:cryptoImpl.randomUUID(),attemptCode:'TC-BBBBBB',event:'card_preparation_error',phase:'card_preparation',outcome:'error',stage:'stationary_check',errorCode:'stationary_not_confirmed'}]);
+ assert.equal(row.errorCode,'stationary_not_confirmed');
+ assert.equal(diagnosticForAttempt({kind:'card',status:'failed',errorCode:row.errorCode}).code,'034');
+});
 
 test("card black box reports the last confirmed packet without identity or raw payload", async () => {
   let posted = null;
@@ -145,13 +152,18 @@ test('cancelled preparation is distinct from failure; repeated finish sends one 
 test('preparation taxonomy describes observed signals and never sends free-form error text',async()=>{
  for (const [stage,message,code] of [
   ['live_validation','Prvo povežite tahograf za bezbednu LIVE vezu.','live_unavailable'],
-  ['stationary_check','Vozilo nije na 0 km/h — BLE veza je prekinuta.','stationary_not_confirmed'],
-  ['stationary_check','Brzina tahografa nije potvrđena — BLE veza je prekinuta.','stationary_not_confirmed'],
+  ['stationary_check','Vozilo nije na 0 km/h — BLE veza je prekinuta.','stationary_response_nonzero'],
+  ['stationary_check','Brzina tahografa nije potvrđena — BLE veza je prekinuta.','stationary_response_unconfirmed'],
   ['live_teardown','unexpected private driver/card text','unknown'],
  ]) {
   const {batches,make}=preparationRecorder();const attempt=make();
   attempt.preparationStage(stage);attempt.preparationError(new Error(message));await attempt.finish({status:'preparation_error'});
   assert.equal(batches.at(-1).at(-1).errorCode,code);
+  if (code.startsWith('stationary_response_')) {
+   const [admin]=summarizeTechnicalAttempts(batches.at(-1).slice().reverse().map(e=>({...e,createdAt:100})),200);
+   assert.equal(admin.status,'failed');assert.equal(admin.packetCount,0);
+   assert.equal(admin.diagnostic.code,code==='stationary_response_nonzero'?'036':'035');
+  }
   assert.equal(JSON.stringify(batches).includes(message),false);
  }
 });
