@@ -18,6 +18,7 @@ import { beginAppV2CardRead, createAppV2CardSession, failAppV2CardRead } from ".
 import { runBrowserAppV2GoldenCardRead } from "../../lib/app-v2-card-transport-controller-bridge.js";
 import { openBrowserAppV2FieldTransport } from "../../lib/app-v2-field-transport.js";
 import { runAppV2LiveAttemptWithTelemetry } from "../../lib/app-v2-technical-telemetry-bridge.js";
+import { createAppV2CardTelemetry } from "../../lib/app-v2-card-telemetry.js";
 import { runAppV2FieldLiveRead } from "../../lib/app-v2-field-live-adapter.js";
 import { phoneTimeZone, projectCardTimelineForPhone } from "../../lib/app-v2-phone-timeline.js";
 import { calendarCardPeriod } from "../../lib/card-period.js";
@@ -358,8 +359,13 @@ export default function AppV2Client() {
 
   const runCardRead = async () => {
     if (cardSession.busy || cardReadBusyRef.current || liveOpeningRef.current) return;
+    const telemetry = createAppV2CardTelemetry({ preparing: true });
+    setCardAttemptCode(telemetry?.attemptCode ?? null);
     const transport = liveTransportRef.current;
     if (!transport || transport.isConnected?.() === false) {
+      telemetry?.preparationStage("live_validation");
+      telemetry?.preparationError(new Error("Prvo povežite tahograf za bezbednu LIVE vezu."));
+      void telemetry?.finish({ status: "preparation_error" });
       setLiveSession(createAppV2LiveSession({ phase: "error", errorText: "Prvo povežite tahograf za bezbednu LIVE vezu." }));
       setLiveRunState("error"); return;
     }
@@ -369,24 +375,29 @@ export default function AppV2Client() {
     const current = () => mountedRef.current && generationRef.current === generation && !controller.signal.aborted;
     cardReadBusyRef.current = true;
     setCardHandoffPreparing(true);
-    setCardDiagnostic(null); setCardReadProgress(null); setCardAttemptCode(null);
+    setCardDiagnostic(null); setCardReadProgress(null);
     stopSpeedGuard();
     let readingSession: ReturnType<typeof beginAppV2CardRead> | null = null;
     try {
       // The refresh yields between UDS requests; only its current request drains.
+      telemetry?.preparationStage("live_idle_wait");
       await waitForLiveMonitorIdle(() => udsMonitorBusyRef.current, controller.signal);
       if (!current()) throw new Error("BLE_CANCELLED");
+      telemetry?.preparationStage("live_validation");
       if (liveTransportRef.current !== transport || transport.isConnected?.() === false) throw new Error("LIVE veza je završena pre očitavanja kartice.");
       const selectedCardDevice = transport.device;
       if (!selectedCardDevice?.gatt) throw new Error("Tahograf iz LIVE veze nije dostupan za očitavanje kartice.");
+      telemetry?.preparationStage("stationary_check");
       await transport.assertStationary();
       if (!current()) throw new Error("BLE_CANCELLED");
+      telemetry?.preparationStage("stationary_confirmed");
       stopSpeedGuard();
       liveTransportRef.current = null;
       setLiveConnected(false);
       setLastLiveSnapshot(previous => previous ? { ...previous, connected: false } : previous);
       const handoffStartedAt = performance.now();
       let handoff: CardTransportDiagnostic["handoff"];
+      telemetry?.preparationStage("live_teardown");
       try { handoff = await closeLiveForCard(transport, controller.signal); }
       catch (error) {
         if (current()) setCardDiagnostic(Object.freeze({
@@ -404,6 +415,7 @@ export default function AppV2Client() {
       let storage: Storage | null = null;
       try { storage = window.localStorage; } catch {}
       const result = await runBrowserAppV2GoldenCardRead({
+        telemetry,
         session: readingSession, storage, capturedAtIso: new Date().toISOString(),
         transportOptions: { device: selectedCardDevice, disconnectOnFinish: true, signal: controller.signal },
         onDiagnostic: diagnostic => { if (current()) setCardDiagnostic(Object.freeze({ ...diagnostic, handoff })); },
@@ -417,6 +429,8 @@ export default function AppV2Client() {
         setCapturedAtIso(result.session.capturedAtIso); setRestoreState("restored");
       }
     } catch (error) {
+      telemetry?.preparationError(error, { cancelled: controller.signal.aborted });
+      void telemetry?.finish({ status: "preparation_error" });
       if (liveTransportRef.current === transport) await closePersistentLive(null, transport);
       else { try { await transport.close(); } catch {} }
       if (!mountedRef.current) return;
