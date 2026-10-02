@@ -30,7 +30,7 @@ test('phone projection splits midnight and preserves elapsed minutes across DST'
  }
 });
 test('calendar period requires every date, not just its first day',()=>{
- const days=Array.from({length:8},(_,i)=>({dateIso:`2026-09-${21+i}`,drivingMinutes:60}));
+ const days=Array.from({length:8},(_,i)=>({dateIso:`2026-09-${21+i}`,drivingMinutes:60,coverageComplete:true}));
  const options={now:new Date('2026-09-28T12:00:00Z'),timeZone:'Europe/Vienna'};
  assert.equal(calendarCardPeriod(days,options).minutes,480);
  assert.equal(calendarCardPeriod(days.filter((_,i)=>i!==3),options).minutes,null);

@@ -25,6 +25,7 @@ export type FieldProvenHistoryDay = Readonly<{
   drivingMinutes: number;
   activityTotals: Readonly<Record<FieldProvenTimelineKind, number>>;
   timingComplete: boolean;
+  coverageComplete: boolean;
   events: readonly FieldProvenHistoryEvent[];
   segments: readonly FieldProvenHistorySegment[];
 }>;
