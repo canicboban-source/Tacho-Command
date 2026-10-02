@@ -58,7 +58,7 @@
 .dayTimelineHeader { display:flex; justify-content:space-between; color:#94adbb; font-size:11px; }
 .dayTimelineTrack { position:relative; height:30px; background:#1c2d3b; border-radius:6px; overflow:hidden; margin-top:16px; }
 .dayTimelineTrack > span { position:absolute; top:0; bottom:0; min-width:1px; }
-.drive { background:#a3f3ce; }.work { background:#6fa8e3; }.availability { background:#c3a6e9; }.rest { background:#466474; }
+.drive { background:#f5f7fa; }.work { background:#f3cd67; }.availability { background:#c3a6e9; }.rest { background:#88c8eb; }
 .daySummaryGrid strong { display:block; font-size:20px; margin-top:5px; }
 .daySummaryGrid > div { border-bottom:1px solid #293b49; padding:12px 0; color:#bcced8; font-size:12px; }
 .daySequenceRow { display:grid; grid-template-columns:95px 1fr auto; gap:10px; align-items:center; border-bottom:1px solid #263744; padding:15px 0; font-size:12px; }
@@ -76,3 +76,27 @@
 .bottomNav .activeTab { color:#a3f3ce; background:#172d28; }
 @media(min-width:700px) { .screen { gap:18px; }.metricsGrid { grid-template-columns:repeat(3,1fr); }.metricPanel { padding:22px; }.bottomNav small { font-size:12px; } }
 @media(max-width:360px) { .brand > strong { font-size:14px; }.content { padding-inline:12px; }.daySequenceRow { grid-template-columns:80px 1fr; }.daySequenceRow > span { grid-column:2; }.periodCard { flex-wrap:wrap; }.metricPanel { padding:14px; } }
+
+.timelineControls { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.timelineControls > span { margin-right:auto; font-size:13px; color:#b9ccd7; }
+.content .timelineControls button { width:44px; min-height:44px; padding:6px; margin:0; }
+.timelineScroll { overflow-x:auto; padding-top:4px; padding-bottom:8px; }
+.timelineCanvas { min-width:100%; }
+.timelineRuler { position:relative; height:32px; margin-inline:16px; }
+.timelineRuler > span { position:absolute; top:0; bottom:0; border-left:1px solid #526b7c; font-size:10px; color:#a8becb; padding-left:3px; white-space:nowrap; }
+.timelineRuler > span:last-child { transform:translateX(-100%); border-left:0; border-right:1px solid #526b7c; padding-right:3px; }
+.timelineCanvas .dayTimelineTrack { margin:0 16px; height:44px; }
+.content .dayTimelineTrack .timelineSegment { position:absolute; top:0; bottom:0; min-width:1px; min-height:0; padding:0; margin:0; border:0; border-right:1px solid #111d28; border-radius:0; }
+.content .timelineSegment.drive { background:#f5f7fa; }
+.content .timelineSegment.work { background:#f3cd67; }
+.content .timelineSegment.rest { background:#88c8eb; }
+.content .timelineSegment.availability { background:#c3a6e9; }
+.content .timelineSegment:focus-visible,.content .timelineSegment[aria-pressed="true"] { outline:2px solid #ff7e87; outline-offset:-2px; z-index:1; }
+.timelineLegend { display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:12px; font-size:11px; color:#c3d2db; }
+.timelineLegend > span { display:flex; align-items:center; gap:5px; }
+.timelineLegend i { width:12px; height:12px; border-radius:3px; }
+
+.content .timelineSegment.drive { height:44px; top:auto; }
+.content .timelineSegment.work { height:33px; top:auto; }
+.content .timelineSegment.availability { height:23px; top:auto; }
+.content .timelineSegment.rest { height:13px; top:auto; }
