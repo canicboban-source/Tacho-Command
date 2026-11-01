@@ -1,4 +1,5 @@
 "use client";
+import { trackGa4 } from "../../lib/ga4-client.js";
 import { abortableBleDelay } from "../../lib/ble-operation.js";
 import { openBetaCopy } from "../../lib/open-beta-copy.js";
 import { APP_LANGUAGES, type AppLocale } from "../../lib/product-app-copy.js";
@@ -359,10 +360,12 @@ export default function AppV2Client() {
 
   const runCardRead = async () => {
     if (cardSession.busy || cardReadBusyRef.current || liveOpeningRef.current) return;
+    trackGa4("card_read_start");
     const telemetry = createAppV2CardTelemetry({ preparing: true });
     setCardAttemptCode(telemetry?.attemptCode ?? null);
     const transport = liveTransportRef.current;
     if (!transport || transport.isConnected?.() === false) {
+      trackGa4("card_read_error");
       telemetry?.preparationStage("live_validation");
       telemetry?.preparationError(new Error("Prvo povežite tahograf za bezbednu LIVE vezu."));
       void telemetry?.finish({ status: "preparation_error" });
@@ -422,6 +425,7 @@ export default function AppV2Client() {
         onProgress: progress => { if (current()) setCardReadProgress(progress); },
         onTelemetryAttempt: code => { if (current()) setCardAttemptCode(code); },
       });
+      trackGa4(controller.signal.aborted ? "card_read_cancelled" : (result.status === "accepted" || result.status === "accepted_unsaved") && result.session?.currentCard ? "card_read_success" : "card_read_error");
       if (!mountedRef.current || generationRef.current !== generation) return;
       if (result.session) setCardSession(result.session);
       if ((result.status === "accepted" || result.status === "accepted_unsaved") && result.session?.currentCard) {
@@ -429,6 +433,7 @@ export default function AppV2Client() {
         setCapturedAtIso(result.session.capturedAtIso); setRestoreState("restored");
       }
     } catch (error) {
+      trackGa4(controller.signal.aborted ? "card_read_cancelled" : "card_read_error");
       telemetry?.preparationError(error, { cancelled: controller.signal.aborted });
       void telemetry?.finish({ status: "preparation_error" });
       if (liveTransportRef.current === transport) await closePersistentLive(null, transport);
