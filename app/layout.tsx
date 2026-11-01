@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./landing-oled.css";
+import AnalyticsConsent from "./analytics-consent";
 import ServiceWorkerRegister from "./service-worker-register";
 import ProductAnalyticsObserver from "./product-analytics-observer";
 
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ServiceWorkerRegister />
         <ProductAnalyticsObserver />
         {children}
+        <AnalyticsConsent />
       </body>
     </html>
   );
