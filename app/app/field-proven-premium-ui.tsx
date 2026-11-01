@@ -348,7 +348,7 @@ export default function FieldProvenPremiumUi({
                   <ul>
                     {day.events.map((event, i) => (
                       <li key={i}>
-                        <time>{clock(event.minute)}</time> ·{" "}
+                        <time>{event.timeLabel ?? clock(event.minute)}</time> ·{" "}
                         {event.kind === "card-inserted"
                           ? t.inserted
                           : t.removed}
@@ -360,7 +360,7 @@ export default function FieldProvenPremiumUi({
                   {day.segments.map((seg, i) => (
                     <div className={styles.daySequenceRow} key={i}>
                       <time>
-                        {clock(seg.startMinute)}–{clock(seg.endMinute)}
+                        {seg.timeLabel ?? `${clock(seg.startMinute)}–${clock(seg.endMinute)}`}
                       </time>
                       <span>{kinds[seg.kind]}</span>
                       <strong>{minutes(seg.minutes)}</strong>
