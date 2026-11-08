@@ -272,7 +272,7 @@ export default function LandingPage({
         </Link>
       </header>
       <section className="tcx-hero">
-        <div className="tcx-hero-image" role="img" aria-label={{"sr": "TachoCommand u autobuskoj kabini pre polaska", "en": "TachoCommand in a bus cab before departure", "de": "TachoCommand in der Buskabine vor der Abfahrt", "ru": "TachoCommand в кабине автобуса перед выездом", "bg": "TachoCommand в кабината на автобус преди потегляне", "ro": "TachoCommand în cabina autobuzului înainte de plecare", "hu": "TachoCommand a busz vezetőfülkéjében indulás előtt"}[locale]} />
+        <div className="tcx-hero-image" aria-hidden="true" />
         <div className="tcx-hero-shade" aria-hidden="true" />
         <div className="tcx-hero-copy">
           <span className="tcx-badge"><i />{visual.label}</span>
