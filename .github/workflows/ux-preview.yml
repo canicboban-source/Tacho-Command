@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   preview:
-    if: github.head_ref == 'feat/first-read-language-ux' && github.event.pull_request.head.repo.full_name == github.repository
+    if: (github.head_ref == 'feat/first-read-language-ux' || github.head_ref == 'feat/visual-driver-story') && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
