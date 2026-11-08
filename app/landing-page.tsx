@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
 import { firstReadCopy } from "../lib/first-read-copy.js";
 import InstallGuide from "./install-guide";
+import { landingProductCopy } from "../lib/landing-product-copy.js";
 import { formatTachoCommandVersionLine } from "../lib/product-version.js";
 import { openBetaCopy } from "../lib/open-beta-copy.js";
 import { extraLandingCopy } from "../lib/landing-extra-copy.js";
@@ -185,6 +186,7 @@ export default function LandingPage({
 }) {
   const locale = initialLocale,
     t = copy[locale],
+    product = landingProductCopy[locale],
     router = useRouter();
   useEffect(() => {
     const next = canonicalLocaleRoute ? initialLocale : readProductLocale();
@@ -209,7 +211,7 @@ export default function LandingPage({
     ru: {"eyebrow": "РЕАЛЬНОЕ СЧИТЫВАНИЕ · DTCO 4.1", "title": "Показываем результат.", "body": "Запись из автобуса: LIVE и считывание карты до 269 пакетов.", "action": "12 секунд реального считывания · подписи на английском", "stat": "269 пакетов · 67,3 КБ · успешно", "poster": "/field-proof-en.webp", "video": "/field-proof-en.mp4"},
     sr: {
       eyebrow: "STVARNO OČITAVANJE · DTCO 4.1",
-      title: "Iz kabine. Iz stvarne vožnje.",
+      title: "Stvarna kartica. Stvarno očitavanje.",
       body: "Snimljeno u autobusu: LIVE podaci i čitanje kartice paket po paket — do potvrđenih 269 paketa.",
       poster: "/field-proof-sr.webp",
       video: "/field-proof-sr.mp4",
@@ -218,7 +220,7 @@ export default function LandingPage({
     },
     en: {
       eyebrow: "REAL READ · DTCO 4.1",
-      title: "From the cab. Not a concept.",
+      title: "A real card. A real read.",
       body: "Recorded in a bus: confirmed LIVE data and a driver-card read, packet by packet.",
       poster: "/field-proof-en.webp",
       video: "/field-proof-en.mp4",
@@ -277,7 +279,7 @@ export default function LandingPage({
         <div className="tcx-hero-copy">
           <span className="tcx-badge"><i />{visual.label}</span>
           <h1>{t.title}</h1>
-          <p>{t.body}</p>
+          <p>{product.hero}</p>
           <div className="tcx-hero-actions">
             <Link
               className="tcx-primary"
@@ -300,6 +302,7 @@ export default function LandingPage({
             </a>
 
           </div>
+          <p className="tcx-free-beta">{product.free}</p>
           <p className="tcx-hero-compatibility"><span aria-hidden="true">✓</span> {visual.device} <span aria-hidden="true">·</span> VDO DTCO 4.1 / 4.1a</p>
         </div>
         <figure className="tcx-app-preview">
@@ -313,6 +316,25 @@ export default function LandingPage({
       <div className="tcx-proof">
         <span>{visual.proof}</span><span>{visual.device}</span><span>{visual.languages}</span><span>{t.safety}</span>
       </div>
+      <section className="tcx-section tcx-product-explainer" aria-labelledby="tcx-product-title">
+        <h2 id="tcx-product-title">{product.title}</h2>
+        <p className="tcx-section-intro">{product.intro}</p>
+        <div className="tcx-value-grid">
+          {product.features.map(([title, body], i) => (
+            <article className="tcx-value-card" key={title}>
+              <span className="tcx-feature-number">0{i + 1}</span><h3>{title}</h3><p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="tcx-section tcx-beginner" aria-labelledby="tcx-beginner-title">
+        <h2 id="tcx-beginner-title">{product.beginnerTitle}</h2>
+        <p>{product.beginnerBody}</p>
+        <dl className="tcx-activity-key">
+          {product.glossary.map(([name, description], i) => <div key={name}><dt><span className={"tcx-activity-dot tcx-activity-" + i} aria-hidden="true" />{name}</dt><dd>{description}</dd></div>)}
+        </dl>
+        <p className="tcx-scope-note">{product.note}</p>
+      </section>
       <section className="tcx-field-proof" aria-labelledby="tcx-field-title">
         <div className="tcx-field-copy">
           <span className="tcx-eyebrow">{fieldProof.eyebrow}</span>
@@ -330,16 +352,6 @@ export default function LandingPage({
           )}
           <figcaption>{fieldProof.action}</figcaption>
         </figure>
-      </section>
-      <section className="tcx-section">
-        <div className="tcx-value-grid">
-          {t.features.map(([title, body], i) => (
-            <article className="tcx-value-card" key={title}>
-              <span className="tcx-feature-number">0{i + 1}</span><h2>{title}</h2>
-              <p>{body}</p>
-            </article>
-          ))}
-        </div>
       </section>
       <section className="tcx-section tcx-guide" id="connect">
         <h2>{t.how}</h2>
