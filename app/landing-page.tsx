@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
 import { firstReadCopy } from "../lib/first-read-copy.js";
 import InstallGuide from "./install-guide";
+import { landingStoryCopy } from "../lib/landing-story-copy.js";
 import { landingHelpCopy } from "../lib/landing-help-copy.js";
 import { landingProductCopy } from "../lib/landing-product-copy.js";
 import { formatTachoCommandVersionLine } from "../lib/product-version.js";
@@ -189,6 +190,7 @@ export default function LandingPage({
     t = copy[locale],
     product = landingProductCopy[locale],
     help = landingHelpCopy[locale],
+    story = landingStoryCopy[locale],
     router = useRouter();
   useEffect(() => {
     const next = canonicalLocaleRoute ? initialLocale : readProductLocale();
@@ -243,6 +245,15 @@ export default function LandingPage({
     publishProductLocale(locale);
     void trackProductAnalytics("open_app_click", { locale, surface: "landing" });
   };
+  const storySteps = [
+    {id: 'connection', title: story.steps[0], body: t.steps[1] + ' ' + firstReadCopy[locale].steps[2], image: 'connected', width: 720, height: 238, caption: story.captions[0]},
+    {id: 'read', title: story.steps[1], body: help.faq[2][1], image: 'reading', width: 720, height: 464, caption: story.captions[1]},
+    {id: 'overview', title: story.steps[2], body: product.features[0][1], image: 'overview', width: 720, height: 800, caption: story.captions[3]},
+    {id: 'history', title: story.steps[3], body: product.features[2][1], image: 'history', width: 720, height: 1072, caption: story.captions[4]},
+    {id: 'day', title: story.steps[4], body: help.uses[0][1], image: 'day', width: 720, height: 464, caption: story.captions[5]},
+    {id: 'periods', title: story.steps[5], body: product.features[1][1], image: 'periods', width: 720, height: 928, caption: story.captions[6]},
+    {id: 'breaks', title: story.steps[6], body: product.features[3][1], image: 'break-check', width: 720, height: 500, caption: story.captions[7]},
+  ];
   return (
     <main className="tcx-shell" lang={locale}>
       <header className="tcx-nav">
@@ -319,28 +330,32 @@ export default function LandingPage({
       <div className="tcx-proof">
         <span>{visual.proof}</span><span>{visual.device}</span><span>{visual.languages}</span><span>{t.safety}</span>
       </div>
-      <section className="tcx-section tcx-product-explainer" aria-labelledby="tcx-product-title">
-        <h2 id="tcx-product-title">{product.title}</h2>
-        <p className="tcx-section-intro">{product.intro}</p>
-        <div className="tcx-value-grid">
-          {product.features.map(([title, body], i) => (
-            <article className="tcx-value-card" key={title}>
-              <span className="tcx-feature-number">0{i + 1}</span><h3>{title}</h3><p>{body}</p>
-            </article>
-          ))}
+      <section className="tcx-section tcx-story" aria-labelledby="tcx-product-title">
+        <div className="tcx-story-intro">
+          <h2 id="tcx-product-title">{story.title}</h2>
+          <p>{product.intro}</p>
         </div>
-      </section>
-      <section className="tcx-section tcx-use-cases" aria-labelledby="tcx-use-title">
-        <h2 id="tcx-use-title">{help.useTitle}</h2>
-        {help.uses.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}
-      </section>
-      <section className="tcx-section tcx-beginner" aria-labelledby="tcx-beginner-title">
-        <h2 id="tcx-beginner-title">{product.beginnerTitle}</h2>
-        <p>{product.beginnerBody}</p>
-        <dl className="tcx-activity-key">
-          {product.glossary.map(([name, description], i) => <div key={name}><dt><span className={"tcx-activity-dot tcx-activity-" + i} aria-hidden="true" />{name}</dt><dd>{description}</dd></div>)}
-        </dl>
-        <p className="tcx-scope-note">{product.note}</p>
+        {storySteps.map((step, i) => <article className="tcx-story-step" key={step.id} id={"show-" + step.id}>
+          <div className="tcx-story-text">
+            <span className="tcx-story-number" aria-hidden="true">0{i + 1}</span>
+            <h3>{step.title}</h3>
+            <p>{step.body}</p>
+            {step.id === 'connection' && <a className="tcx-secondary" href="#connect">{t.guide} ↓</a>}
+          </div>
+          <div className="tcx-story-visual">
+            <figure>
+              <div className="tcx-story-image"><img src={"/story/" + step.image + ".webp"} width={step.width} height={step.height} alt={step.title + ". " + step.caption} loading="lazy" /></div>
+              <figcaption><strong>{step.caption}</strong><span>{firstReadCopy[locale].preview}</span></figcaption>
+            </figure>
+            {step.id === 'read' && <figure className="tcx-story-saved">
+              <div className="tcx-story-image"><img src="/story/saved.webp" width="720" height="128" alt={story.captions[2]} loading="lazy" /></div>
+              <figcaption><strong>{story.captions[2]}</strong><span>{firstReadCopy[locale].preview}</span></figcaption>
+            </figure>}
+            {step.id === 'day' && <dl className="tcx-story-legend">
+              {product.glossary.map(([name, description], index) => <div key={name}><dt><span className={"tcx-story-dot tcx-story-dot-" + index} aria-hidden="true" />{name}</dt><dd>{description}</dd></div>)}
+            </dl>}
+          </div>
+        </article>)}
       </section>
       <section className="tcx-field-proof" aria-labelledby="tcx-field-title">
         <div className="tcx-field-copy">
@@ -381,7 +396,8 @@ export default function LandingPage({
       </section>
       <section className="tcx-section tcx-faq" aria-labelledby="tcx-faq-title">
         <h2 id="tcx-faq-title">{help.faqTitle}</h2>
-        {help.faq.map(([question, answer]) => <article key={question}><h3>{question}</h3><p>{answer}</p></article>)}
+        {help.faq.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
+        <details><summary>{story.more}</summary>{help.uses.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}</details>
       </section>
       <section className="tcx-section tcx-trust-grid">
         <article><span className="tcx-trust-symbol" aria-hidden="true">✓</span><h2>{t.trust}</h2><p>{t.scope}</p></article>
