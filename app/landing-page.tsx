@@ -1,8 +1,11 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { useEffect } from "react";
+import { publishProductLocale, readProductLocale, localizedLandingHref } from "../lib/product-locale.js";
 import { useRouter } from "next/navigation";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
+import { firstReadCopy } from "../lib/first-read-copy.js";
 import InstallGuide from "./install-guide";
 import { formatTachoCommandVersionLine } from "../lib/product-version.js";
 import { openBetaCopy } from "../lib/open-beta-copy.js";
@@ -11,7 +14,7 @@ export type Locale = "sr" | "en" | "de" | "ru" | "bg" | "ro" | "hu";
 const copy = {
   ...extraLandingCopy,
   sr: {
-    title: "Tvoj dan. U tvojim rukama.",
+    title: "Tvoja kartica. Na tvom telefonu.",
     body: "Poveži tahograf. Očitaj karticu. Razumi svojih 56 dana — mirno, jasno i na svom telefonu.",
     open: "Otvori beta aplikaciju",
     guide: "Prvo povezivanje",
@@ -65,7 +68,7 @@ const copy = {
     legal: ["Privatnost", "Uslovi", "Impressum"],
   },
   en: {
-    title: "Your day. In your hands.",
+    title: "Your driver card. On your phone.",
     body: "Connect the tachograph. Read your card. Understand your 56 days — clearly, calmly and on your phone.",
     open: "Open beta app",
     guide: "First connection",
@@ -119,7 +122,7 @@ const copy = {
     legal: ["Privacy", "Terms", "Imprint"],
   },
   de: {
-    title: "Dein Tag. In deiner Hand.",
+    title: "Deine Fahrerkarte. Auf deinem Telefon.",
     body: "Tachograph verbinden. Fahrerkarte auslesen. Deine 56 Tage verstehen — klar, ruhig und auf deinem Smartphone.",
     open: "Beta-App öffnen",
     guide: "Erste Verbindung",
@@ -174,7 +177,8 @@ const copy = {
   },
 } as const;
 export default function LandingPage({
-  initialLocale = "sr",
+  initialLocale = "en",
+  canonicalLocaleRoute = false,
 }: {
   initialLocale?: Locale;
   canonicalLocaleRoute?: boolean;
@@ -182,6 +186,13 @@ export default function LandingPage({
   const locale = initialLocale,
     t = copy[locale],
     router = useRouter();
+  useEffect(() => {
+    const next = canonicalLocaleRoute ? initialLocale : readProductLocale();
+    publishProductLocale(next);
+    if (!canonicalLocaleRoute) {
+      router.replace(localizedLandingHref(next, window.location.search, window.location.hash));
+    }
+  }, [initialLocale, canonicalLocaleRoute, router]);
   const visual = {
     hu: {"label": "VEZETŐKNEK KÉSZÜLT", "languages": "7 nyelv az alkalmazásban", "ready": "Készen állsz a következő szünetre?", "proof": "Ellenőrizve: DTCO 4.1 / 4.1a", "device": "Android · Chrome"},
     ro: {"label": "PENTRU ȘOFERI", "languages": "7 limbi în aplicație", "ready": "Pregătit pentru următoarea pauză?", "proof": "Verificat pe DTCO 4.1 / 4.1a", "device": "Android · Chrome"},
@@ -225,13 +236,13 @@ export default function LandingPage({
     },
   }[locale];
   const openApp = () => {
-    try { localStorage.setItem("tachocommand-locale", locale); } catch {}
+    publishProductLocale(locale);
     void trackProductAnalytics("open_app_click", { locale, surface: "landing" });
   };
   return (
     <main className="tcx-shell" lang={locale}>
       <header className="tcx-nav">
-        <Link className="tcx-brand" href="/">
+        <Link className="tcx-brand" href={localizedLandingHref(locale)}>
           <span className="tcx-monogram">TC</span> TachoCommand
         </Link>
         <select
@@ -243,10 +254,8 @@ export default function LandingPage({
               locale: next,
               surface: "landing",
             });
-            try {
-              localStorage.setItem("tachocommand-locale", next);
-            } catch {}
-            router.push("/" + next);
+            publishProductLocale(next);
+            router.push(localizedLandingHref(next, window.location.search, window.location.hash));
           }}
         >
           <option value="sr">Srpski</option>
@@ -292,6 +301,13 @@ export default function LandingPage({
             <InstallGuide locale={locale} />
           </div>
         </div>
+        <figure className="tcx-app-preview">
+          <div className="tcx-app-preview-frame">
+            <div className="tcx-app-preview-brand"><span className="tcx-monogram">TC</span><strong>TachoCommand</strong></div>
+            <img src="/app-overview-real.webp" width="540" height="1080" alt={firstReadCopy[locale].preview} fetchPriority="high" />
+          </div>
+          <figcaption>{firstReadCopy[locale].preview}</figcaption>
+        </figure>
       </section>
       <div className="tcx-proof">
         <span>{visual.proof}</span><span>{visual.device}</span><span>{visual.languages}</span><span>{t.safety}</span>

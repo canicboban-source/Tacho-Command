@@ -1,8 +1,9 @@
 "use client";
+import { readProductLocale, publishProductLocale } from "../../lib/product-locale.js";
 import { trackGa4 } from "../../lib/ga4-client.js";
 import { abortableBleDelay } from "../../lib/ble-operation.js";
 import { openBetaCopy } from "../../lib/open-beta-copy.js";
-import { APP_LANGUAGES, type AppLocale } from "../../lib/product-app-copy.js";
+import { type AppLocale } from "../../lib/product-app-copy.js";
 
 import type { CardTransportDiagnostic } from "../../lib/card-transport-diagnostic";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -97,7 +98,7 @@ function formatRestoreTime(value: string | null, locale: string) {
 
 export default function AppV2Client() {
   const [diagnosticsEnabled, setDiagnosticsEnabled] = useState(false);
-  const [locale, setLocale] = useState<AppLocale>("sr");
+  const [locale, setLocale] = useState<AppLocale>("en");
   const [savedCardVisible, setSavedCardVisible] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [screenAwake, setScreenAwake] = useState(false);
@@ -127,9 +128,8 @@ export default function AppV2Client() {
   useEffect(() => {
     queueMicrotask(() => setDiagnosticsEnabled(new URLSearchParams(window.location.search).get("diagnostics") === "1"));
     try {
-      const saved = localStorage.getItem("tachocommand-locale");
-      const initial = saved ?? navigator.language.slice(0, 2);
-      if (Object.hasOwn(APP_LANGUAGES, initial)) queueMicrotask(() => setLocale(initial as AppLocale));
+      const initial = readProductLocale();
+      queueMicrotask(() => { setLocale(initial); publishProductLocale(initial); });
     } catch {}
     const tick = () => setClock(Date.now());
     const timer = window.setInterval(tick, 10000);
@@ -470,7 +470,7 @@ export default function AppV2Client() {
 
   return (
     <div className={styles.stage}>
-      <aside lang={locale} aria-label={openBetaCopy[locale].title}><strong>{openBetaCopy[locale].title}</strong><p>{openBetaCopy[locale].intro}</p></aside>
+      <aside className={styles.betaNotice} lang={locale} aria-label={openBetaCopy[locale].title}><details><summary>{openBetaCopy[locale].title}</summary><p>{openBetaCopy[locale].intro}</p></details></aside>
       <section className={styles.instrumentFrame} aria-label="TachoCommand premium instrument">
         <FieldProvenPremiumUi
           state={state}
@@ -488,7 +488,7 @@ export default function AppV2Client() {
             diagnosticsEnabled,
             versionLine: formatTachoCommandVersionLine(),
             locale,
-            onLocale: (next) => { setLocale(next); try { localStorage.setItem("tachocommand-locale", next); } catch {} },
+            onLocale: (next) => { setLocale(next); publishProductLocale(next); },
             zone,
             periodLabel: period.start + " — " + period.end,
             periodComplete: period.complete,
