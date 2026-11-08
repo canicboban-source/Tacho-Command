@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
 import { firstReadCopy } from "../lib/first-read-copy.js";
 import InstallGuide from "./install-guide";
+import { landingHelpCopy } from "../lib/landing-help-copy.js";
 import { landingProductCopy } from "../lib/landing-product-copy.js";
 import { formatTachoCommandVersionLine } from "../lib/product-version.js";
 import { openBetaCopy } from "../lib/open-beta-copy.js";
@@ -187,6 +188,7 @@ export default function LandingPage({
   const locale = initialLocale,
     t = copy[locale],
     product = landingProductCopy[locale],
+    help = landingHelpCopy[locale],
     router = useRouter();
   useEffect(() => {
     const next = canonicalLocaleRoute ? initialLocale : readProductLocale();
@@ -278,8 +280,9 @@ export default function LandingPage({
         <div className="tcx-hero-shade" aria-hidden="true" />
         <div className="tcx-hero-copy">
           <span className="tcx-badge"><i />{visual.label}</span>
-          <h1>{t.title}</h1>
+          <h1>{help.title}</h1>
           <p>{product.hero}</p>
+          <p className="tcx-purpose">{help.purpose}</p>
           <div className="tcx-hero-actions">
             <Link
               className="tcx-primary"
@@ -327,6 +330,10 @@ export default function LandingPage({
           ))}
         </div>
       </section>
+      <section className="tcx-section tcx-use-cases" aria-labelledby="tcx-use-title">
+        <h2 id="tcx-use-title">{help.useTitle}</h2>
+        {help.uses.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}
+      </section>
       <section className="tcx-section tcx-beginner" aria-labelledby="tcx-beginner-title">
         <h2 id="tcx-beginner-title">{product.beginnerTitle}</h2>
         <p>{product.beginnerBody}</p>
@@ -371,6 +378,10 @@ export default function LandingPage({
         </details>
         <p>{t.trouble}</p>
         <div className="tcx-install-row"><InstallGuide locale={locale} /></div>
+      </section>
+      <section className="tcx-section tcx-faq" aria-labelledby="tcx-faq-title">
+        <h2 id="tcx-faq-title">{help.faqTitle}</h2>
+        {help.faq.map(([question, answer]) => <article key={question}><h3>{question}</h3><p>{answer}</p></article>)}
       </section>
       <section className="tcx-section tcx-trust-grid">
         <article><span className="tcx-trust-symbol" aria-hidden="true">✓</span><h2>{t.trust}</h2><p>{t.scope}</p></article>
