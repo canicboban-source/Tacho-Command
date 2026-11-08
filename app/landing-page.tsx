@@ -15,7 +15,7 @@ const copy = {
   ...extraLandingCopy,
   sr: {
     title: "Tvoja kartica. Na tvom telefonu.",
-    body: "Poveži tahograf. Očitaj karticu. Razumi svojih 56 dana — mirno, jasno i na svom telefonu.",
+    body: "Očitaj karticu vozača. Pregledaj vožnju, rad i odmor — jasno, na jednom mestu.",
     open: "Otvori beta aplikaciju",
     guide: "Prvo povezivanje",
     safety:
@@ -69,7 +69,7 @@ const copy = {
   },
   en: {
     title: "Your driver card. On your phone.",
-    body: "Connect the tachograph. Read your card. Understand your 56 days — clearly, calmly and on your phone.",
+    body: "Read your driver card. Review driving, work and rest — in one clear view.",
     open: "Open beta app",
     guide: "First connection",
     safety:
@@ -123,7 +123,7 @@ const copy = {
   },
   de: {
     title: "Deine Fahrerkarte. Auf deinem Telefon.",
-    body: "Tachograph verbinden. Fahrerkarte auslesen. Deine 56 Tage verstehen — klar, ruhig und auf deinem Smartphone.",
+    body: "Fahrerkarte auslesen. Lenkzeit, Arbeit und Ruhe übersichtlich auf deinem Smartphone ansehen.",
     open: "Beta-App öffnen",
     guide: "Erste Verbindung",
     safety:
@@ -209,7 +209,7 @@ export default function LandingPage({
     ru: {"eyebrow": "РЕАЛЬНОЕ СЧИТЫВАНИЕ · DTCO 4.1", "title": "Показываем результат.", "body": "Запись из автобуса: LIVE и считывание карты до 269 пакетов.", "action": "12 секунд реального считывания · подписи на английском", "stat": "269 пакетов · 67,3 КБ · успешно", "poster": "/field-proof-en.webp", "video": "/field-proof-en.mp4"},
     sr: {
       eyebrow: "STVARNO OČITAVANJE · DTCO 4.1",
-      title: "Ne obećavamo. Pokazujemo.",
+      title: "Iz kabine. Iz stvarne vožnje.",
       body: "Snimljeno u autobusu: LIVE podaci i čitanje kartice paket po paket — do potvrđenih 269 paketa.",
       poster: "/field-proof-sr.webp",
       video: "/field-proof-sr.mp4",
@@ -218,7 +218,7 @@ export default function LandingPage({
     },
     en: {
       eyebrow: "REAL READ · DTCO 4.1",
-      title: "No promises. Proof.",
+      title: "From the cab. Not a concept.",
       body: "Recorded in a bus: confirmed LIVE data and a driver-card read, packet by packet.",
       poster: "/field-proof-en.webp",
       video: "/field-proof-en.mp4",
@@ -227,7 +227,7 @@ export default function LandingPage({
     },
     de: {
       eyebrow: "ECHTES AUSLESEN · DTCO 4.1",
-      title: "Keine Versprechen. Ein Beleg.",
+      title: "Aus der Fahrerkabine. Aus der Praxis.",
       body: "Im Bus erprobt: bestätigte LIVE-Daten und das Auslesen der Fahrerkarte — Paket für Paket.",
       poster: "/field-proof-de.webp",
       video: null,
@@ -298,12 +298,13 @@ export default function LandingPage({
             >
               {t.guide}
             </a>
-            <InstallGuide locale={locale} />
+
           </div>
+          <p className="tcx-hero-compatibility"><span aria-hidden="true">✓</span> {visual.device} <span aria-hidden="true">·</span> VDO DTCO 4.1 / 4.1a</p>
         </div>
         <figure className="tcx-app-preview">
           <div className="tcx-app-preview-frame">
-            <div className="tcx-app-preview-brand"><span className="tcx-monogram">TC</span><strong>TachoCommand</strong></div>
+            <div className="tcx-app-preview-brand"><span className="tcx-monogram">TC</span><strong>TachoCommand</strong><span className="tcx-screen-dot" aria-hidden="true" /></div>
             <img src="/app-overview-real.webp" width="540" height="1080" alt={firstReadCopy[locale].preview} fetchPriority="high" />
           </div>
           <figcaption>{firstReadCopy[locale].preview}</figcaption>
@@ -357,12 +358,11 @@ export default function LandingPage({
           <p>{t.pairNote}</p>
         </details>
         <p>{t.trouble}</p>
+        <div className="tcx-install-row"><InstallGuide locale={locale} /></div>
       </section>
-      <section className="tcx-section">
-        <h2>{t.trust}</h2>
-        <p>{t.scope}</p>
-        <h2>{t.privacy}</h2>
-        <p>{t.privacyText}</p>
+      <section className="tcx-section tcx-trust-grid">
+        <article><span className="tcx-trust-symbol" aria-hidden="true">✓</span><h2>{t.trust}</h2><p>{t.scope}</p></article>
+        <article><span className="tcx-trust-symbol" aria-hidden="true">⌁</span><h2>{t.privacy}</h2><p>{t.privacyText}</p></article>
       </section>
       <section className="tcx-section tcx-final">
         <span className="tcx-eyebrow">{t.beta}</span><h2>{visual.ready}</h2>
