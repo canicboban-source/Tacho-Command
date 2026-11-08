@@ -1,9 +1,14 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { useEffect } from "react";
+import { publishProductLocale, readProductLocale, localizedLandingHref } from "../lib/product-locale.js";
 import { useRouter } from "next/navigation";
 import { trackProductAnalytics } from "../lib/product-analytics-client.js";
+import { firstReadCopy } from "../lib/first-read-copy.js";
 import InstallGuide from "./install-guide";
+import { landingHelpCopy } from "../lib/landing-help-copy.js";
+import { landingProductCopy } from "../lib/landing-product-copy.js";
 import { formatTachoCommandVersionLine } from "../lib/product-version.js";
 import { openBetaCopy } from "../lib/open-beta-copy.js";
 import { extraLandingCopy } from "../lib/landing-extra-copy.js";
@@ -11,8 +16,8 @@ export type Locale = "sr" | "en" | "de" | "ru" | "bg" | "ro" | "hu";
 const copy = {
   ...extraLandingCopy,
   sr: {
-    title: "Tvoj dan. U tvojim rukama.",
-    body: "Poveži tahograf. Očitaj karticu. Razumi svojih 56 dana — mirno, jasno i na svom telefonu.",
+    title: "Tvoja kartica. Na tvom telefonu.",
+    body: "Očitaj karticu vozača. Pregledaj vožnju, rad i odmor — jasno, na jednom mestu.",
     open: "Otvori beta aplikaciju",
     guide: "Prvo povezivanje",
     safety:
@@ -65,8 +70,8 @@ const copy = {
     legal: ["Privatnost", "Uslovi", "Impressum"],
   },
   en: {
-    title: "Your day. In your hands.",
-    body: "Connect the tachograph. Read your card. Understand your 56 days — clearly, calmly and on your phone.",
+    title: "Your driver card. On your phone.",
+    body: "Read your driver card. Review driving, work and rest — in one clear view.",
     open: "Open beta app",
     guide: "First connection",
     safety:
@@ -119,8 +124,8 @@ const copy = {
     legal: ["Privacy", "Terms", "Imprint"],
   },
   de: {
-    title: "Dein Tag. In deiner Hand.",
-    body: "Tachograph verbinden. Fahrerkarte auslesen. Deine 56 Tage verstehen — klar, ruhig und auf deinem Smartphone.",
+    title: "Deine Fahrerkarte. Auf deinem Telefon.",
+    body: "Fahrerkarte auslesen. Lenkzeit, Arbeit und Ruhe übersichtlich auf deinem Smartphone ansehen.",
     open: "Beta-App öffnen",
     guide: "Erste Verbindung",
     safety:
@@ -174,14 +179,24 @@ const copy = {
   },
 } as const;
 export default function LandingPage({
-  initialLocale = "sr",
+  initialLocale = "en",
+  canonicalLocaleRoute = false,
 }: {
   initialLocale?: Locale;
   canonicalLocaleRoute?: boolean;
 }) {
   const locale = initialLocale,
     t = copy[locale],
+    product = landingProductCopy[locale],
+    help = landingHelpCopy[locale],
     router = useRouter();
+  useEffect(() => {
+    const next = canonicalLocaleRoute ? initialLocale : readProductLocale();
+    publishProductLocale(next);
+    if (!canonicalLocaleRoute) {
+      router.replace(localizedLandingHref(next, window.location.search, window.location.hash));
+    }
+  }, [initialLocale, canonicalLocaleRoute, router]);
   const visual = {
     hu: {"label": "VEZETŐKNEK KÉSZÜLT", "languages": "7 nyelv az alkalmazásban", "ready": "Készen állsz a következő szünetre?", "proof": "Ellenőrizve: DTCO 4.1 / 4.1a", "device": "Android · Chrome"},
     ro: {"label": "PENTRU ȘOFERI", "languages": "7 limbi în aplicație", "ready": "Pregătit pentru următoarea pauză?", "proof": "Verificat pe DTCO 4.1 / 4.1a", "device": "Android · Chrome"},
@@ -198,7 +213,7 @@ export default function LandingPage({
     ru: {"eyebrow": "РЕАЛЬНОЕ СЧИТЫВАНИЕ · DTCO 4.1", "title": "Показываем результат.", "body": "Запись из автобуса: LIVE и считывание карты до 269 пакетов.", "action": "12 секунд реального считывания · подписи на английском", "stat": "269 пакетов · 67,3 КБ · успешно", "poster": "/field-proof-en.webp", "video": "/field-proof-en.mp4"},
     sr: {
       eyebrow: "STVARNO OČITAVANJE · DTCO 4.1",
-      title: "Ne obećavamo. Pokazujemo.",
+      title: "Stvarna kartica. Stvarno očitavanje.",
       body: "Snimljeno u autobusu: LIVE podaci i čitanje kartice paket po paket — do potvrđenih 269 paketa.",
       poster: "/field-proof-sr.webp",
       video: "/field-proof-sr.mp4",
@@ -207,7 +222,7 @@ export default function LandingPage({
     },
     en: {
       eyebrow: "REAL READ · DTCO 4.1",
-      title: "No promises. Proof.",
+      title: "A real card. A real read.",
       body: "Recorded in a bus: confirmed LIVE data and a driver-card read, packet by packet.",
       poster: "/field-proof-en.webp",
       video: "/field-proof-en.mp4",
@@ -216,7 +231,7 @@ export default function LandingPage({
     },
     de: {
       eyebrow: "ECHTES AUSLESEN · DTCO 4.1",
-      title: "Keine Versprechen. Ein Beleg.",
+      title: "Aus der Fahrerkabine. Aus der Praxis.",
       body: "Im Bus erprobt: bestätigte LIVE-Daten und das Auslesen der Fahrerkarte — Paket für Paket.",
       poster: "/field-proof-de.webp",
       video: null,
@@ -225,13 +240,13 @@ export default function LandingPage({
     },
   }[locale];
   const openApp = () => {
-    try { localStorage.setItem("tachocommand-locale", locale); } catch {}
+    publishProductLocale(locale);
     void trackProductAnalytics("open_app_click", { locale, surface: "landing" });
   };
   return (
     <main className="tcx-shell" lang={locale}>
       <header className="tcx-nav">
-        <Link className="tcx-brand" href="/">
+        <Link className="tcx-brand" href={localizedLandingHref(locale)}>
           <span className="tcx-monogram">TC</span> TachoCommand
         </Link>
         <select
@@ -243,10 +258,8 @@ export default function LandingPage({
               locale: next,
               surface: "landing",
             });
-            try {
-              localStorage.setItem("tachocommand-locale", next);
-            } catch {}
-            router.push("/" + next);
+            publishProductLocale(next);
+            router.push(localizedLandingHref(next, window.location.search, window.location.hash));
           }}
         >
           <option value="sr">Srpski</option>
@@ -263,12 +276,13 @@ export default function LandingPage({
         </Link>
       </header>
       <section className="tcx-hero">
-        <div className="tcx-hero-image" role="img" aria-label={{"sr": "TachoCommand u autobuskoj kabini pre polaska", "en": "TachoCommand in a bus cab before departure", "de": "TachoCommand in der Buskabine vor der Abfahrt", "ru": "TachoCommand в кабине автобуса перед выездом", "bg": "TachoCommand в кабината на автобус преди потегляне", "ro": "TachoCommand în cabina autobuzului înainte de plecare", "hu": "TachoCommand a busz vezetőfülkéjében indulás előtt"}[locale]} />
+        <div className="tcx-hero-image" aria-hidden="true" />
         <div className="tcx-hero-shade" aria-hidden="true" />
         <div className="tcx-hero-copy">
           <span className="tcx-badge"><i />{visual.label}</span>
-          <h1>{t.title}</h1>
-          <p>{t.body}</p>
+          <h1>{help.title}</h1>
+          <p>{product.hero}</p>
+          <p className="tcx-purpose">{help.purpose}</p>
           <div className="tcx-hero-actions">
             <Link
               className="tcx-primary"
@@ -289,13 +303,45 @@ export default function LandingPage({
             >
               {t.guide}
             </a>
-            <InstallGuide locale={locale} />
+
           </div>
+          <p className="tcx-free-beta">{product.free}</p>
+          <p className="tcx-hero-compatibility"><span aria-hidden="true">✓</span> {visual.device} <span aria-hidden="true">·</span> VDO DTCO 4.1 / 4.1a</p>
         </div>
+        <figure className="tcx-app-preview">
+          <div className="tcx-app-preview-frame">
+            <div className="tcx-app-preview-brand"><span className="tcx-monogram">TC</span><strong>TachoCommand</strong><span className="tcx-screen-dot" aria-hidden="true" /></div>
+            <img src="/app-overview-real.webp" width="540" height="1080" alt={firstReadCopy[locale].preview} fetchPriority="high" />
+          </div>
+          <figcaption>{firstReadCopy[locale].preview}</figcaption>
+        </figure>
       </section>
       <div className="tcx-proof">
         <span>{visual.proof}</span><span>{visual.device}</span><span>{visual.languages}</span><span>{t.safety}</span>
       </div>
+      <section className="tcx-section tcx-product-explainer" aria-labelledby="tcx-product-title">
+        <h2 id="tcx-product-title">{product.title}</h2>
+        <p className="tcx-section-intro">{product.intro}</p>
+        <div className="tcx-value-grid">
+          {product.features.map(([title, body], i) => (
+            <article className="tcx-value-card" key={title}>
+              <span className="tcx-feature-number">0{i + 1}</span><h3>{title}</h3><p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="tcx-section tcx-use-cases" aria-labelledby="tcx-use-title">
+        <h2 id="tcx-use-title">{help.useTitle}</h2>
+        {help.uses.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}
+      </section>
+      <section className="tcx-section tcx-beginner" aria-labelledby="tcx-beginner-title">
+        <h2 id="tcx-beginner-title">{product.beginnerTitle}</h2>
+        <p>{product.beginnerBody}</p>
+        <dl className="tcx-activity-key">
+          {product.glossary.map(([name, description], i) => <div key={name}><dt><span className={"tcx-activity-dot tcx-activity-" + i} aria-hidden="true" />{name}</dt><dd>{description}</dd></div>)}
+        </dl>
+        <p className="tcx-scope-note">{product.note}</p>
+      </section>
       <section className="tcx-field-proof" aria-labelledby="tcx-field-title">
         <div className="tcx-field-copy">
           <span className="tcx-eyebrow">{fieldProof.eyebrow}</span>
@@ -314,16 +360,6 @@ export default function LandingPage({
           <figcaption>{fieldProof.action}</figcaption>
         </figure>
       </section>
-      <section className="tcx-section">
-        <div className="tcx-value-grid">
-          {t.features.map(([title, body], i) => (
-            <article className="tcx-value-card" key={title}>
-              <span className="tcx-feature-number">0{i + 1}</span><h2>{title}</h2>
-              <p>{body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
       <section className="tcx-section tcx-guide" id="connect">
         <h2>{t.how}</h2>
         <ol>
@@ -341,12 +377,15 @@ export default function LandingPage({
           <p>{t.pairNote}</p>
         </details>
         <p>{t.trouble}</p>
+        <div className="tcx-install-row"><InstallGuide locale={locale} /></div>
       </section>
-      <section className="tcx-section">
-        <h2>{t.trust}</h2>
-        <p>{t.scope}</p>
-        <h2>{t.privacy}</h2>
-        <p>{t.privacyText}</p>
+      <section className="tcx-section tcx-faq" aria-labelledby="tcx-faq-title">
+        <h2 id="tcx-faq-title">{help.faqTitle}</h2>
+        {help.faq.map(([question, answer]) => <article key={question}><h3>{question}</h3><p>{answer}</p></article>)}
+      </section>
+      <section className="tcx-section tcx-trust-grid">
+        <article><span className="tcx-trust-symbol" aria-hidden="true">✓</span><h2>{t.trust}</h2><p>{t.scope}</p></article>
+        <article><span className="tcx-trust-symbol" aria-hidden="true">⌁</span><h2>{t.privacy}</h2><p>{t.privacyText}</p></article>
       </section>
       <section className="tcx-section tcx-final">
         <span className="tcx-eyebrow">{t.beta}</span><h2>{visual.ready}</h2>

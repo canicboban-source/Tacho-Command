@@ -100,3 +100,15 @@
 .content .timelineSegment.work { height:33px; top:auto; }
 .content .timelineSegment.availability { height:23px; top:auto; }
 .content .timelineSegment.rest { height:13px; top:auto; }
+
+.firstConnectionPanel { padding:clamp(22px,4vw,36px); border:1px solid #365549; border-radius:22px; background:linear-gradient(145deg,#142c26,#111d28); }
+.firstConnectionKicker { color:#a3f3ce; font-size:12px; font-weight:700; letter-spacing:.08em; }
+.firstConnectionPanel h1 { font-size:clamp(26px,5vw,36px); line-height:1.15; letter-spacing:-.04em; margin:12px 0 16px; }
+.content .compatibilityNote { color:#c4e9d6; font-size:13px; margin:18px 0; }
+.firstConnectionPanel ol { margin:24px 0; padding-left:24px; }
+.firstConnectionPanel li { padding:0 0 16px 8px; color:#d4e1e8; }
+.firstConnectionPanel li::marker { color:#a3f3ce; font-weight:700; }
+.firstConnectionActions { display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; }
+.content .firstConnectionActions button { background:#a3f3ce; color:#0c281b; border-color:#a3f3ce; }
+.firstConnectionActions a { display:inline-flex; align-items:center; min-height:46px; }
+@media(min-width:700px) { .metricsGrid { grid-template-columns:repeat(2,minmax(0,1fr)); } }

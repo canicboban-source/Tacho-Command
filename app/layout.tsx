@@ -38,7 +38,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="sr">
+    <html lang="en">
       <head>
         {/* Keep installation local to this origin; metadataBase is for SEO. */}
         <link rel="manifest" href="/manifest.webmanifest" />

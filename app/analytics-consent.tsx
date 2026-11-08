@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useState} from 'react';
+import {readProductLocale, PRODUCT_LOCALE_KEY, PRODUCT_LOCALE_EVENT} from '../lib/product-locale.js';
 import {usePathname} from 'next/navigation';
 import {ga4Consent,ga4PageView,setGa4Consent,syncGa4Consent,GA4_CONSENT_KEY} from '../lib/ga4-client.js';
 const copy: Record<string, string[]> = {
@@ -17,13 +18,12 @@ export default function AnalyticsConsent() {
   const sync=()=>{
    const allowed=location.hostname==='tachocommand.com' && /^\/(?:sr|en|de|ru|bg|ro|hu|app|app-v2|privacy|terms|impressum)?$/.test(location.pathname);
    setEnabled(allowed); setBusy(document.documentElement.dataset.tachoBusy==='true');
-   let saved='';try{saved=localStorage.getItem('tachocommand-locale')??'';}catch{}
-   const language=location.pathname.split('/')[1];setLocale(copy[language]?language:copy[saved]?saved:navigator.language.slice(0,2));
+   setLocale(readProductLocale());
   };
   const frame=requestAnimationFrame(()=>{sync();setVisible(ga4Consent()===null);ga4PageView();});
-  const changed=(event:StorageEvent)=>{if(event.key===GA4_CONSENT_KEY){syncGa4Consent();setVisible(false);}};
-  window.addEventListener('tacho-busy-change',sync);window.addEventListener('storage',changed);
-  return()=>{cancelAnimationFrame(frame);window.removeEventListener('tacho-busy-change',sync);window.removeEventListener('storage',changed);};
+  const changed=(event:StorageEvent)=>{if(event.key===GA4_CONSENT_KEY){syncGa4Consent();setVisible(false);} if(event.key===PRODUCT_LOCALE_KEY)sync();};
+  window.addEventListener('tacho-busy-change',sync);window.addEventListener('storage',changed);window.addEventListener(PRODUCT_LOCALE_EVENT,sync);
+  return()=>{cancelAnimationFrame(frame);window.removeEventListener('tacho-busy-change',sync);window.removeEventListener('storage',changed);window.removeEventListener(PRODUCT_LOCALE_EVENT,sync);};
  },[path]);
  const t=copy[locale]??copy.en;
  if(!enabled||busy)return null;
