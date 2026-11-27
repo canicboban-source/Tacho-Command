@@ -1,9 +1,10 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, uniqueIndex, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const technicalTelemetryEvents = sqliteTable(
   "technical_telemetry_events",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    sequence: integer("event_sequence"),
     sessionId: text("session_id").notNull(),
     attemptCode: text("attempt_code"),
     event: text("event").notNull(),
@@ -21,6 +22,7 @@ export const technicalTelemetryEvents = sqliteTable(
     createdAt: integer("created_at").notNull(),
   },
   (table) => [
+    uniqueIndex("technical_session_sequence").on(table.sessionId, table.sequence),
     index("technical_telemetry_created_at_idx").on(table.createdAt),
     index("technical_telemetry_session_idx").on(table.sessionId),
     index("technical_telemetry_attempt_code_idx").on(table.attemptCode),

@@ -13,6 +13,7 @@ type DayRow = Readonly<{
   app_opens?: number | string | null;
 }>;
 type TechnicalRow = Readonly<{
+  event_sequence?: number | null;
   attempt_code?: string | null;
   event?: string | null;
   phase?: string | null;
@@ -104,8 +105,8 @@ export async function GET(request: Request) {
         "SELECT outcome AS key, COUNT(*) AS count FROM technical_telemetry_events WHERE created_at >= ?1 GROUP BY outcome ORDER BY count DESC",
       ).bind(since30).all(),
       env.DB.prepare(
-        "SELECT attempt_code, event, phase, outcome, error_code, packet_count, byte_count, duration_ms, created_at, stage, last_confirmed_stage, nrc FROM technical_telemetry_events WHERE attempt_code IS NOT NULL ORDER BY created_at DESC, id DESC LIMIT 1000",
-      ).all(),
+        "SELECT event_sequence, attempt_code, event, phase, outcome, error_code, packet_count, byte_count, duration_ms, created_at, stage, last_confirmed_stage, nrc FROM technical_telemetry_events WHERE attempt_code IS NOT NULL AND created_at >= ?1 ORDER BY created_at DESC, id DESC LIMIT 1000",
+      ).bind(since30).all(),
     ]);
 
     const productEvents = rowsToCounts((eventCounts.results ?? []) as CountRow[]);
@@ -124,6 +125,7 @@ export async function GET(request: Request) {
       packetCount: numeric(row.packet_count),
       byteCount: numeric(row.byte_count),
       durationMs: numeric(row.duration_ms),
+      sequence: row.event_sequence ?? null,
       createdAt: numeric(row.created_at),
     })).filter((row) => row.attemptCode && row.createdAt);
 

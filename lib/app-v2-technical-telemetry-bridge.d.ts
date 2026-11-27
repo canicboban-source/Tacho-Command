@@ -11,7 +11,7 @@ export type AppV2LiveAttemptWithTelemetryResult = AppV2FieldSessionResult & Read
 }>;
 
 export declare function runAppV2LiveAttemptWithTelemetry(input?: Readonly<{
-  openTransport?: () => Promise<AppV2FieldTransport | null>;
+  openTransport?: (onStage?: (stage: string) => void) => Promise<AppV2FieldTransport | null>;
   keepTransportOpen?: boolean;
   cryptoImpl?: {
     randomUUID: () => string;

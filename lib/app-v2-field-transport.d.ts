@@ -7,10 +7,13 @@ export type AppV2FieldTransport = Readonly<{
 export declare function openAppV2FieldTransport(input?: Readonly<{
   bluetooth?: {
     requestDevice: (options: Readonly<{
-      acceptAllDevices: boolean;
+      acceptAllDevices?: boolean;
+      filters?: readonly ({ namePrefix: string } | { services: readonly string[] })[];
       optionalServices: readonly string[];
     }>) => Promise<unknown>;
   } | null;
+  onStage?: (stage: string) => void;
+  showAllDevices?: boolean;
   timeoutMs?: number;
   settleMs?: number;
   closeTimeoutMs?: number;
@@ -21,6 +24,8 @@ export declare function openAppV2FieldTransport(input?: Readonly<{
 
 
 export declare function openBrowserAppV2FieldTransport(input?: Readonly<{
+  onStage?: (stage: string) => void;
+  showAllDevices?: boolean;
   timeoutMs?: number;
   settleMs?: number;
   closeTimeoutMs?: number;

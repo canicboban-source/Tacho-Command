@@ -13,13 +13,14 @@ export async function storeTechnicalTelemetry(
   // contains several events; one multi-row INSERT can exceed that limit.
   // A D1 batch is atomic, so acknowledge only after every event is committed.
   const statements = events.map((event) => db.insert(technicalTelemetryEvents).values({
+    sequence: event.sequence,
     sessionId: event.sessionId, attemptCode: event.attemptCode,
     event: event.event, phase: event.phase, outcome: event.outcome,
     did: event.did, durationMs: event.durationMs, nrc: event.nrc,
     deviceFamily: event.deviceFamily, errorCode: event.errorCode,
     stage: event.stage, lastConfirmedStage: event.lastConfirmedStage,
     packetCount: event.packetCount, byteCount: event.byteCount, createdAt,
-  }));
+  }).onConflictDoNothing({ target: [technicalTelemetryEvents.sessionId, technicalTelemetryEvents.sequence] }));
   const [first, ...rest] = statements;
   if (!first) return;
   await db.batch([

@@ -112,7 +112,7 @@ test("schema follows latest snapshot while initial migration stays immutable", (
   const schemaColumns = schemaStorageColumns(schemaSource);
   const snapshotColumns = Object.keys(snapshot3.tables.technical_telemetry_events.columns);
 
-  assert.deepEqual(schemaColumns, [...latestColumns.slice(0, 11), "stage", "last_confirmed_stage", ...latestColumns.slice(11)]);
+  assert.deepEqual(schemaColumns, ["id", "event_sequence", ...latestColumns.slice(1, 11), "stage", "last_confirmed_stage", ...latestColumns.slice(11)]);
   assert.deepEqual(snapshotColumns, latestColumns);
   assert.match(migrationSql5, /ADD COLUMN stage TEXT/);
   assert.match(migrationSql5, /ADD COLUMN last_confirmed_stage TEXT/);

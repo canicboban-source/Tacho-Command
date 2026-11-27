@@ -23,7 +23,7 @@ The app supports Serbian, English, German, Russian, Bulgarian, Romanian and Hung
 | Evidence | Status |
 | --- | --- |
 | Published application source | [`73664bc9e6dc`](https://github.com/canicboban-source/Tacho-Command/commit/73664bc9e6dc45a8d893e785c1c079cb7a298a6e), PR #111 |
-| Release label | `2026.09.30-beta.3` remains unchanged; use **Build** under **Card** to identify the actual source |
+| Release label | `2026.11.27-beta.1` · 2026-11-27 · **Card** shows the release date and build SHA |
 | Production deployment | [Cloudflare run #15](https://github.com/canicboban-source/Tacho-Command/actions/runs/41320622868) succeeded |
 | Live verification | `/app` displayed build `73664bc9e6dc`; technical telemetry readiness returned `ready` |
 | Automated verification | 353 tests passed; typecheck, builds and GitHub CI/quality checks passed; lint had zero errors and two existing warnings |
@@ -151,3 +151,11 @@ Legacy/manual and field-test surfaces remain; they are not the authoritative `/a
 `main` is the integration target. Production uses independent Cloudflare Worker `tachocommand`, binding `DB` to `tachocommand-prod`. Retained Sites files are history/build support, not a direction to deploy there.
 
 Use the existing **Cloudflare production deploy** workflow with the full reviewed `main` SHA. It builds, tests, checks the fixed target, applies versioned migrations and deploys. A merge or successful workflow does not replace live origin/build/API checks and required hardware verification. Documentation-only changes do not require deployment.
+
+### Release history
+
+| Release | Update date | Changes |
+| --- | --- | --- |
+| 2026.11.27-beta.1 | 2026-11-27 | Filtered Bluetooth selection with an all-devices fallback, localized connection guidance, partial LIVE status and ordered card diagnostics. |
+
+For every production release, update the shared version manifest and append the release date and changes here. The deployed build SHA identifies the exact source.

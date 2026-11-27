@@ -31,7 +31,7 @@ test("app v2 wires the browser transport factory through the telemetry bridge an
   assert.ok(client.includes("openBrowserAppV2FieldTransport"));
   assert.ok(client.includes("runAppV2LiveAttemptWithTelemetry"));
   assert.ok(bridge.includes("runAppV2FieldSession"));
-  assert.ok(client.includes("onConnect: runLiveRead"));
+  assert.ok(client.includes("onConnect: () => runLiveRead()"));
   assert.ok(client.includes("snapshotConfirmed: true"));
 
   for (const forbidden of [

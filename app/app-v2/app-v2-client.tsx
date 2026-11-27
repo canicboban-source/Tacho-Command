@@ -309,7 +309,7 @@ export default function AppV2Client() {
   const restoredLabel = formatRestoreTime(capturedAtIso, locale);
 
 
-  const runLiveRead = async () => {
+  const runLiveRead = async (showAllDevices = false) => {
     if (liveOpeningRef.current || cardSession.busy || cardReadBusyRef.current) return;
     liveOpeningRef.current = true;
     const generation = ++generationRef.current;
@@ -321,7 +321,7 @@ export default function AppV2Client() {
       await closePersistentLive();
       if (controller.signal.aborted) return;
       const result = await runAppV2LiveAttemptWithTelemetry({
-        openTransport: () => openBrowserAppV2FieldTransport({ signal: controller.signal }),
+        openTransport: (onStage) => openBrowserAppV2FieldTransport({ onStage, showAllDevices, signal: controller.signal }),
         keepTransportOpen: true,
       });
       if (!mountedRef.current || generationRef.current !== generation || controller.signal.aborted) {
@@ -503,7 +503,8 @@ export default function AppV2Client() {
               setCardSession(createAppV2CardSession()); setRestoreState("empty"); setCardReadProgress(null);
             },
             onCancel: () => { liveOpenAbortRef.current?.abort(); readAbortRef.current?.abort(); },
-            onConnect: runLiveRead,
+            onConnect: () => runLiveRead(),
+            onShowAllDevices: () => runLiveRead(true),
             onReadCard: runCardRead,
             onDisconnect: () => { void closePersistentLive(); },
           }}
