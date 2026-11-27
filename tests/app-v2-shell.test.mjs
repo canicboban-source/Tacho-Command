@@ -26,7 +26,7 @@ test("app v2 composes the premium instrument and shared release identity", () =>
   assert.ok(client.includes("FieldProvenPremiumUi"));
   assert.ok(client.includes("runAppV2LiveAttemptWithTelemetry"));
   assert.ok(client.includes("formatTachoCommandVersionLine"));
-  assert.ok(client.includes("onConnect: runLiveRead"));
+  assert.ok(client.includes("onConnect: () => runLiveRead()"));
   assert.ok(css.includes(".instrumentFrame"));
   assert.equal(css.includes("linear-gradient"), false);
 });

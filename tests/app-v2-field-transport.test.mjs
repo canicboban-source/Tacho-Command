@@ -181,3 +181,19 @@ test("LIVE close reports a failed close credit instead of allowing silent handof
   await assert.rejects(transport.close(), /close write failed/);
   assert.equal(fixture.disconnected, 1);
 });
+
+test("normal picker restricts discovery and the explicit fallback preserves service access", async () => {
+  for (const showAllDevices of [false, true]) {
+    let options;
+    const bluetooth = { requestDevice(value) { options = value; throw new Error("chooser dismissed"); } };
+    await assert.rejects(openAppV2FieldTransport({ bluetooth, showAllDevices }), /chooser dismissed/);
+    assert.ok(options.optionalServices.includes(TACHO_DIAGNOSTICS_SERVICE_UUID));
+    if (showAllDevices) {
+      assert.equal(options.acceptAllDevices, true);
+      assert.equal(options.filters, undefined);
+    } else {
+      assert.equal(options.acceptAllDevices, undefined);
+      assert.deepEqual(options.filters, [{ namePrefix: "DTCO" }, ...options.optionalServices.map(uuid => ({ services: [uuid] }))]);
+    }
+  }
+});

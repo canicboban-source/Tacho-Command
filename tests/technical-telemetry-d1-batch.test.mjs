@@ -15,9 +15,11 @@ const storageSource=transpile(await readFile(new URL("../lib/technical-telemetry
  .replace('"drizzle-orm"',JSON.stringify(import.meta.resolve("drizzle-orm")))
  .replace('"../db/schema"',JSON.stringify(schemaUrl));
 const {storeTechnicalTelemetry}=await import(dataUrl(storageSource));
+const sequenceMigration = await readFile(new URL("../drizzle/0006_technical_event_sequence.sql", import.meta.url), "utf8");
 function database(failAt=-1) {
  const sqlite=new DatabaseSync(":memory:");
  sqlite.exec(`CREATE TABLE technical_telemetry_events (id INTEGER PRIMARY KEY,session_id TEXT,attempt_code TEXT,event TEXT,phase TEXT,outcome TEXT,did TEXT,duration_ms INTEGER,nrc INTEGER,device_family TEXT,error_code TEXT,stage TEXT,last_confirmed_stage TEXT,packet_count INTEGER,byte_count INTEGER,created_at INTEGER)`);
+ sqlite.exec(sequenceMigration);
  const client={prepare(sql){return {bind(...params){assert.ok(params.length<=100,"D1 bound parameter limit exceeded");return {sql,params};}};},async batch(statements){
   sqlite.exec("BEGIN");
   try {const results=statements.map((q,i)=>{if(i===failAt)throw new Error("injected write failure");sqlite.prepare(q.sql).run(...q.params);return {results:[],success:true};});sqlite.exec("COMMIT");return results;}
@@ -46,7 +48,7 @@ test("prepared card final report exceeds old INSERT limit but atomic storage ret
 test("maximum accepted batch fits D1 limits and a failed write rolls back the entire report",async()=>{
  const report=await finalReport(491);const events=Array.from({length:20},(_,i)=>report[i%report.length]);
  const good=database();await storeTechnicalTelemetry(good.db,events,1000,0);
- assert.equal(good.sqlite.prepare("SELECT COUNT(*) AS n FROM technical_telemetry_events").get().n,20);good.sqlite.close();
+ assert.equal(good.sqlite.prepare("SELECT COUNT(*) AS n FROM technical_telemetry_events").get().n,report.length);good.sqlite.close();
  const bad=database(3);await assert.rejects(storeTechnicalTelemetry(bad.db,events,1000,0),/injected/);
  assert.equal(bad.sqlite.prepare("SELECT COUNT(*) AS n FROM technical_telemetry_events").get().n,0);bad.sqlite.close();
 });

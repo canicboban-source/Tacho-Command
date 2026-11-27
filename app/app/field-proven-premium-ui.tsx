@@ -7,12 +7,25 @@ import DayTimeline from "./day-timeline";
 import { diagnosticCopy } from "../../lib/product-diagnostic-copy.js";
 import { appCopy as copy, APP_LANGUAGES, type AppLocale } from "../../lib/product-app-copy.js";
 import { reviewUtcCardBreaks, exportUtcCardCsv } from "../../lib/card-utc-review.js";
-import { useState } from "react";
+import { liveGuidance, guidanceFor } from "../../lib/live-guidance.js";
+import { classifyLiveError } from "../../lib/live-error.js";
+import { useSyncExternalStore, useState } from "react";
 import styles from "./field-proven-premium-ui.module.css";
 import type {
   FieldProvenProductState,
   FieldProvenHistoryDay,
 } from "../../lib/field-proven-product-state.js";
+const subscribeCapability = () => () => {};
+const bluetoothUnavailable = () => !("bluetooth" in navigator);
+const serverBluetoothUnavailable = () => false;
+
+const allDevicesLabel = {
+  sr: "Nema tahografa? Prikaži sve uređaje", en: "Tachograph missing? Show all devices",
+  de: "Tachograf fehlt? Alle Geräte anzeigen", ru: "Нет тахографа? Показать все устройства",
+  bg: "Няма тахограф? Покажи всички устройства", ro: "Lipsește tahograful? Arată toate dispozitivele",
+  hu: "Nem látszik a tachográf? Összes eszköz megjelenítése",
+};
+
 export type ProductTab = "live" | "periods" | "history" | "attention" | "card";
 type Locale = AppLocale;
 type ProductControls = {
@@ -51,6 +64,7 @@ type ProductControls = {
   onCancel: () => void;
   onDisconnect?: () => void;
   onConnect: () => void;
+  onShowAllDevices?: () => void;
   onReadCard: () => void;
 };
 function minutes(value: number | null) {
@@ -83,6 +97,7 @@ export default function FieldProvenPremiumUi({
   state: FieldProvenProductState;
   controls: ProductControls;
 }) {
+  const unsupported = useSyncExternalStore(subscribeCapability, bluetoothUnavailable, serverBluetoothUnavailable);
   const [tab, setTab] = useState<ProductTab>("live");
   const [selected, setSelected] = useState<string | null>(null);
   const t = copy[c.locale];
@@ -177,8 +192,9 @@ export default function FieldProvenPremiumUi({
           <strong>{status}</strong>
         </div>
         <p className={styles.safetyNote}>{t.safety}</p>
+        {unsupported && <p role="status">{liveGuidance[c.locale].unsupported}</p>}
         {c.errorText && (
-          <p role="alert">{c.locale === "sr" ? c.errorText : t.error}</p>
+          <p role="alert">{guidanceFor(classifyLiveError(c.errorText), c.locale) ?? (c.locale === "sr" ? c.errorText : t.error)}</p>
         )}
         {c.savedAvailable && (
           <section className={styles.emptyPanel}>
@@ -196,7 +212,8 @@ export default function FieldProvenPremiumUi({
           <p className={styles.compatibilityNote}>{first.ready}</p>
           <ol>{first.steps.map(step => <li key={step}>{step}</li>)}</ol>
           <div className={styles.firstConnectionActions}>
-            <button disabled={c.accessAllowed === false || busy} onClick={c.onConnect}>{t.connect}</button>
+            <button disabled={unsupported || c.accessAllowed === false || busy} onClick={c.onConnect}>{t.connect}</button>
+            {c.onShowAllDevices && <button disabled={unsupported || c.accessAllowed === false || busy || c.phase === "connected"} onClick={c.onShowAllDevices}>{allDevicesLabel[c.locale]}</button>}
             <a href={localizedLandingHref(c.locale, "", "#connect")}>{t.help}</a>
           </div>
           <p>{first.help}</p>
@@ -208,10 +225,11 @@ export default function FieldProvenPremiumUi({
               <p>{c.phase === "connected" ? t.connected : t.offline}</p>
               <button
                 onClick={c.onConnect}
-                disabled={c.accessAllowed === false || busy || c.phase === "connected"}
+                disabled={unsupported || c.accessAllowed === false || busy || c.phase === "connected"}
               >
                 {c.phase === "connecting" ? t.connecting : t.connect}
               </button>
+              {c.onShowAllDevices && <button disabled={unsupported || c.accessAllowed === false || busy || c.phase === "connected"} onClick={c.onShowAllDevices}>{allDevicesLabel[c.locale]}</button>}
               {c.phase === "connected" && (
                 <button onClick={c.onDisconnect}>{t.disconnect}</button>
               )}

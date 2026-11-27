@@ -86,3 +86,8 @@ test('onboarding never hides an in-progress read or explicit saved-card choice',
   assert.doesNotMatch(html,/Your first connection/);
  }
 });
+
+test("English explains an unconfirmed speed response without attributing movement to the vehicle", () => {
+ const html=render(Ui,{state:createFieldProvenProductState(),controls:{...controls,locale:"en",phase:"error",errorText:"Brzina tahografa nije potvrđena — BLE veza je prekinuta."}});
+ assert.match(html,/No speed reading was confirmed/);
+});

@@ -4,6 +4,7 @@ export type TechnicalTelemetryEventName =
   | "transport_ready"
   | "tester_present"
   | "did_read"
+  | "snapshot_partial"
   | "snapshot_complete"
   | "timeout"
   | "nrc"
@@ -45,6 +46,7 @@ export type TechnicalTelemetryDeviceFamily =
   | "unknown";
 
 export type TechnicalTelemetrySanitizedEvent = Readonly<{
+  sequence?: number;
   schema: "tc-tech-v1";
   sessionId: string;
   attemptCode: string | null;
